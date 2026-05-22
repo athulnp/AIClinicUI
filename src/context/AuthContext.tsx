@@ -65,7 +65,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clinicId?: number;
     }) => {
       const res = await authApi.login(payload);
-      persist(res.token, res.user, res.refreshToken);
+
+      // Normalize possible response shapes from the API:
+      // 1) LoginResponse { token, refreshToken, user }
+      // 2) ApiResponse<LoginResponse> { success, data: { token, refreshToken, user } }
+      // 3) Legacy { user } (no token)
+      let token: string | undefined;
+      let refresh: string | undefined;
+      let u: any = undefined;
+
+      if (res) {
+        if ((res as any).token) {
+          token = (res as any).token;
+          refresh = (res as any).refreshToken;
+          u = (res as any).user;
+        } else if ((res as any).data) {
+          token = (res as any).data.token;
+          refresh = (res as any).data.refreshToken;
+          u = (res as any).data.user;
+        } else if ((res as any).user) {
+          u = (res as any).user;
+          token = (res as any).token ?? (res as any).accessToken;
+          refresh = (res as any).refreshToken;
+        }
+      }
+
+      if (!token || !u) {
+        // If token missing, throw so caller can show error
+        throw new Error('Invalid login response from server');
+      }
+
+      persist(token, u as User, refresh ?? '');
     },
     [persist],
   );
@@ -73,6 +103,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       if (token) await authApi.logout();
+    } catch {
+      // Ignore errors during logout (token might already be invalid)
     } finally {
       localStorage.clear();
       setToken(null);
@@ -82,20 +114,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   useEffect(() => {
-    if (!token) {
+    // Check both the state AND localStorage to handle async updates
+    const currentToken = token || localStorage.getItem('token');
+    
+    if (!currentToken) {
       setLoading(false);
       return;
     }
+    
     authApi
       .me()
       .then((u) => {
         setUser(u);
         localStorage.setItem('user', JSON.stringify(u));
-        if (u.clinicId && !selectedClinicId) setSelectedClinicId(u.clinicId);
+        if (u.clinicId && !selectedClinicId) setSelectedClinicIdState(u.clinicId);
       })
-      .catch(() => logout())
+      .catch((err) => {
+        // Clear invalid token on 401
+        localStorage.clear();
+        setToken(null);
+        setUser(null);
+        setSelectedClinicIdState(null);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [token]);
 
   const isSuperAdmin = user?.role === UserRole.SuperAdmin;
   const isClinicStaff = user != null && !isSuperAdmin;

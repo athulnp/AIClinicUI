@@ -1,4 +1,6 @@
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import { X } from 'lucide-react';
+import { useNotification, type NotificationType } from '../context/NotificationContext';
 
 export function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
@@ -134,4 +136,39 @@ export function PageLoader() {
 
 export function EmptyState({ message }: { message: string }) {
   return <p className="py-12 text-center text-slate-500">{message}</p>;
+}
+
+export function Toast({ message, type, onClose }: { message: string; type: NotificationType; onClose: () => void }) {
+  const bgColors = {
+    success: 'bg-emerald-500',
+    error: 'bg-red-500',
+    warning: 'bg-amber-500',
+    info: 'bg-blue-500',
+  };
+
+  return (
+    <div className={`${bgColors[type]} flex items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg`}>
+      <span>{message}</span>
+      <button onClick={onClose} className="hover:opacity-80">
+        <X size={18} />
+      </button>
+    </div>
+  );
+}
+
+export function ToastContainer() {
+  const { notifications, removeNotification } = useNotification();
+
+  return (
+    <div className="fixed bottom-0 right-0 z-50 space-y-2 p-4">
+      {notifications.map((notification) => (
+        <Toast
+          key={notification.id}
+          message={notification.message}
+          type={notification.type}
+          onClose={() => removeNotification(notification.id)}
+        />
+      ))}
+    </div>
+  );
 }

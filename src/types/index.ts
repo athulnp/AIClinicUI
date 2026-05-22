@@ -147,3 +147,59 @@ export interface PaginationParams {
   pageNumber?: number;
   pageSize?: number;
 }
+
+export interface CreateAppointmentRequest {
+  patientId: number;
+  doctorId: number;
+  appointmentDate: string;
+  startTime: string;
+  endTime: string;
+  reason?: string;
+  notes?: string;
+}
+
+export interface RescheduleAppointmentRequest {
+  newAppointmentDate: string;
+  newStartTime: string;
+  newEndTime: string;
+}
+
+export interface UpdateAppointmentStatusRequest {
+  status: AppointmentStatus;
+  notes?: string;
+}
+
+export interface CreatePatientRequest {
+  patientCode: string;
+  fullName: string;
+  gender: Gender;
+  dateOfBirth: string;
+  phoneNumber: string;
+  email?: string;
+  address?: string;
+  bloodGroup?: string;
+  medicalHistory?: string;
+  allergies?: string;
+  emergencyContact?: string;
+  notes?: string;
+}
+
+export interface CreateDoctorRequest {
+  userId: number;
+  specialization: string;
+  licenseNumber: string;
+  yearsOfExperience: number;
+  consultationFee: number;
+  department?: string;
+  bio?: string;
+}
+
+export interface UpdateDoctorRequest {
+  specialization?: string;
+  licenseNumber?: string;
+  yearsOfExperience?: number;
+  consultationFee?: number;
+  department?: string;
+  bio?: string;
+  isAvailable?: boolean;
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
@@ -164,7 +165,10 @@ export function PatientsPage() {
                   <td className="px-5 py-3">{p.phoneNumber}</td>
                   <td className="px-5 py-3">{formatDate(p.dateOfBirth)}</td>
                   <td className="px-5 py-3">{genderLabels[p.gender]}</td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-5 py-3 text-right space-x-1">
+                    <Link to={`/patients/${p.id}`}>
+                      <Button variant="ghost">View</Button>
+                    </Link>
                     <Button variant="ghost" onClick={() => openEdit(p)}>Edit</Button>
                     <Button variant="ghost" onClick={() => remove(p.id)}>Delete</Button>
                   </td>
