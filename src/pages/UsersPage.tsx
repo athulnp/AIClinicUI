@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
@@ -144,12 +145,9 @@ export function UsersPage() {
                     <Badge tone={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
                   </td>
                   <td className="px-5 py-3 text-right space-x-1">
-                    {u.isActive && u.id !== currentUser?.id && (
-                      <>
-                        <Button variant="ghost" onClick={() => openEdit(u)}>Edit</Button>
-                        <Button variant="ghost" onClick={() => deactivate(u.id)}>Deactivate</Button>
-                      </>
-                    )}
+                    <Link to={`/users/${u.id}`}>
+                      <Button variant="ghost" size="sm">Details</Button>
+                    </Link>
                   </td>
                 </tr>
               ))}

@@ -127,6 +127,7 @@ export const billingApi = {
     q.set('pageSize', String(params.pageSize ?? 10));
     return apiRequest<PagedResponse<Billing>>(`/api/billing?${q}`);
   },
+  get: (id: number) => apiRequest<Billing>(`/api/billing/${id}`),
   outstanding: (params: PaginationParams) => {
     const q = new URLSearchParams();
     q.set('pageNumber', String(params.pageNumber ?? 1));

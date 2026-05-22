@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { billingApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';

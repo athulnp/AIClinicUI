@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { appointmentsApi, doctorsApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
@@ -164,6 +165,9 @@ export function AppointmentsPage() {
                     <Badge tone={statusTone(a.status)}>{appointmentStatusLabels[a.status]}</Badge>
                   </td>
                   <td className="px-5 py-3 text-right space-x-1">
+                    <Link to={`/appointments/${a.id}`}>
+                      <Button variant="ghost">Details</Button>
+                    </Link>
                     {a.status === AppointmentStatus.Scheduled && (
                       <>
                         <Button variant="ghost" onClick={() => { setShowReschedule(a); setRescheduleForm({ newAppointmentDate: a.appointmentDate.split('T')[0], newStartTime: a.startTime.split(':')[0] + ':' + a.startTime.split(':')[1], newEndTime: a.endTime.split(':')[0] + ':' + a.endTime.split(':')[1] }); }}>Reschedule</Button>

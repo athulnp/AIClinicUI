@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { doctorsApi, usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
@@ -163,6 +164,9 @@ export function DoctorsPage() {
                     </Badge>
                   </td>
                   <td className="px-5 py-3 text-right space-x-1">
+                    <Link to={`/doctors/${d.id}`}>
+                      <Button variant="ghost">Details</Button>
+                    </Link>
                     <Button variant="ghost" onClick={() => openEdit(d)}>Edit</Button>
                     <Button variant="ghost" onClick={() => remove(d.id)}>Delete</Button>
                   </td>

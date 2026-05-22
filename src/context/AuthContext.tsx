@@ -131,13 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         // Clear invalid token on 401
-        localStorage.clear();
-        setToken(null);
-        setUser(null);
-        setSelectedClinicIdState(null);
+        if ((err as any)?.status === 401) {
+          localStorage.clear();
+          setToken(null);
+          setUser(null);
+          setSelectedClinicIdState(null);
+        }
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, selectedClinicId]);
 
   const isSuperAdmin = user?.role === UserRole.SuperAdmin;
   const isClinicStaff = user != null && !isSuperAdmin;
