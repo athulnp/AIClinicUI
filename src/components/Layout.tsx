@@ -63,7 +63,7 @@ export function Layout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 flex-col bg-white border-r border-[#bfc7d1]/30 shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-transform duration-300 lg:static lg:transform-none ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-80 flex-col bg-white border-r border-[#bfc7d1]/30 shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-transform duration-300 lg:w-72 lg:static lg:transform-none ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="flex items-center justify-between px-6 py-6 border-b border-[#e1e3e4]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-[#707881]">AI Dental OS</p>
@@ -169,12 +169,12 @@ export function Layout() {
               >
                 <Menu size={24} />
               </button>
-              <div className="relative">
+              <div className="relative hidden sm:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#707881]" />
                 <input
                   type="search"
                   placeholder="Search..."
-                  className="pl-10 pr-4 py-2 w-64 rounded-lg border border-[#bfc7d1] bg-white text-sm outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all"
+                  className="pl-10 pr-4 py-2 w-64 rounded-lg border border-[#bfc7d1] bg-white text-sm outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all lg:w-64"
                 />
               </div>
             </div>
@@ -191,14 +191,14 @@ export function Layout() {
         </header>
 
         {needsClinicContext && (
-          <div className="mx-6 mt-6 rounded-lg border border-[#ffdad6] bg-[#ffdad6] px-6 py-4 text-sm text-[#93000a]">
+          <div className="mx-4 sm:mx-6 mt-6 rounded-lg border border-[#ffdad6] bg-[#ffdad6] px-4 sm:px-6 py-4 text-sm text-[#93000a]">
             <div className="flex items-center gap-3">
               <AlertCircle size={20} />
               <span>Select a clinic in the sidebar to manage patients, appointments, and billing.</span>
             </div>
           </div>
         )}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Outlet />
         </div>
       </main>
