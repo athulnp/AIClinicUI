@@ -62,7 +62,7 @@ export function AppointmentsPage() {
 
   useEffect(() => {
     load();
-  }, [needsClinicContext]);
+  }, [needsClinicContext, selectedClinicId]);
 
   const create = async () => {
     setError(null);

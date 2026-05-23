@@ -9,6 +9,7 @@ import type {
   PagedResponse,
   Patient,
   PaginationParams,
+  Role,
   User,
   UserRole,
 } from '../types';
@@ -23,6 +24,10 @@ export const authApi = {
 
   me: () => apiRequest<User>('/api/auth/me'),
   logout: () => apiRequest('/api/auth/logout', { method: 'POST' }),
+};
+
+export const rolesApi = {
+  list: () => apiRequest<Role[]>('/api/roles'),
 };
 
 export const clinicsApi = {

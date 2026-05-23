@@ -55,7 +55,7 @@ export function BillingPage() {
 
   useEffect(() => {
     load();
-  }, [needsClinicContext]);
+  }, [needsClinicContext, selectedClinicId]);
 
   const create = async () => {
     setError(null);

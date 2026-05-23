@@ -67,7 +67,7 @@ export function PatientsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search, needsClinicContext]);
+  }, [page, search, needsClinicContext, selectedClinicId]);
 
   useEffect(() => {
     load();

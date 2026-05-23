@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { usersApi } from '../api/services';
+import { usersApi, rolesApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, type User } from '../types';
-import { roleLabels } from '../utils/labels';
+import { type Role, type User } from '../types';
 import {
   Alert,
   Badge,
@@ -21,6 +20,7 @@ import {
 export function UsersPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
@@ -31,14 +31,14 @@ export function UsersPage() {
     fullName: string;
     email: string;
     phoneNumber: string;
-    role: UserRole;
+    roleId: number;
   }>({
     username: '',
     password: '',
     fullName: '',
     email: '',
     phoneNumber: '',
-    role: UserRole.Receptionist,
+    roleId: 0,
   });
 
   const emptyForm = {
@@ -47,7 +47,7 @@ export function UsersPage() {
     fullName: '',
     email: '',
     phoneNumber: '',
-    role: UserRole.Receptionist,
+    roleId: 0,
   };
 
   const load = async () => {
@@ -61,9 +61,22 @@ export function UsersPage() {
     }
   };
 
+  const loadRoles = async () => {
+    try {
+      const res = await rolesApi.list();
+      setRoles(res);
+      if (res.length > 0) {
+        emptyForm.roleId = res[0].id;
+      }
+    } catch (e) {
+      console.error('Failed to load roles', e);
+    }
+  };
+
   useEffect(() => {
     load();
-  }, [needsClinicContext]);
+    loadRoles();
+  }, [needsClinicContext, selectedClinicId]);
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -78,7 +91,7 @@ export function UsersPage() {
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      role: user.roleId as UserRole,
+      roleId: user.roleId,
     });
     setEditId(user.id);
     setError(null);
@@ -89,14 +102,14 @@ export function UsersPage() {
     setError(null);
     try {
       if (modal === 'create') {
-        const body: Record<string, unknown> = { ...form, password: form.password, roleId: Number(form.role) };
+        const body: Record<string, unknown> = { ...form, password: form.password, roleId: form.roleId };
         if (isSuperAdmin && selectedClinicId) {
           body.clinicId = selectedClinicId;
         }
         await usersApi.create(body);
       } else if (editId) {
         const { password, ...data } = form;
-        await usersApi.update(editId, { ...data, roleId: Number(form.role) });
+        await usersApi.update(editId, { ...data, roleId: form.roleId });
       }
       setModal(null);
       load();
@@ -118,9 +131,9 @@ export function UsersPage() {
   if (needsClinicContext) return <EmptyState message="Select a clinic to manage users." />;
   if (loading && items.length === 0) return <PageLoader />;
 
-  const roleOptions = Object.entries(roleLabels)
-    .filter(([k]) => Number(k) !== UserRole.SuperAdmin)
-    .map(([k, v]) => ({ value: k, label: v }));
+  const roleOptions = roles
+    .filter(r => !r.isPlatformRole && r.name !== 'Doctor')
+    .map(r => ({ value: String(r.id), label: r.name }));
 
   return (
     <div>
@@ -179,7 +192,7 @@ export function UsersPage() {
           <Input label="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
           <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Input label="Phone" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} />
-          <Select label="Role" value={form.role} onChange={(e) => setForm({ ...form, role: Number(e.target.value) as UserRole })} options={roleOptions} />
+          <Select label="Role" value={String(form.roleId)} onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })} options={roleOptions} />
         </div>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>

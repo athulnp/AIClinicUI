@@ -12,7 +12,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { clinicsApi } from '../api/services';
-import { UserRole, type Clinic } from '../types';
+import { type Clinic } from '../types';
 import { Button } from './ui';
 
 const nav = [
@@ -40,7 +40,7 @@ export function Layout() {
   const canSee = (item: (typeof nav)[0]) => {
     if (item.roles === 'super') return isSuperAdmin;
     if (item.roles === 'admin')
-      return isSuperAdmin || user?.role === UserRole.Admin;
+      return isSuperAdmin || user?.roleName === 'Admin';
     if (item.roles === 'staff') return !isSuperAdmin || !!selectedClinicId;
     return true;
   };

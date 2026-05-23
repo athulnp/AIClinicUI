@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { Card, PageLoader } from '../components/ui';
 
 export function DashboardPage() {
-  const { user, needsClinicContext } = useAuth();
+  const { user, needsClinicContext, selectedClinicId } = useAuth();
   const [stats, setStats] = useState({ patients: 0, appointments: 0, billing: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +27,7 @@ export function DashboardPage() {
         }),
       )
       .finally(() => setLoading(false));
-  }, [needsClinicContext]);
+  }, [needsClinicContext, selectedClinicId]);
 
   if (loading) return <PageLoader />;
 

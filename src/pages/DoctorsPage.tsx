@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { doctorsApi, usersApi } from '../api/services';
+import { doctorsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, type Doctor, type User } from '../types';
+import { type Doctor } from '../types';
 import {
   Alert,
   Badge,
@@ -14,18 +14,23 @@ import {
   Input,
   Modal,
   PageLoader,
-  Select,
 } from '../components/ui';
 
 export function DoctorsPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<Doctor[]>([]);
-  const [doctors, setDoctors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
+    // User fields
+    username: '',
+    password: '',
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    // Doctor fields
     userId: '',
     specialization: '',
     licenseNumber: '',
@@ -37,6 +42,13 @@ export function DoctorsPage() {
   });
 
   const emptyForm = {
+    // User fields
+    username: '',
+    password: '',
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    // Doctor fields
     userId: '',
     specialization: '',
     licenseNumber: '',
@@ -51,12 +63,8 @@ export function DoctorsPage() {
     if (needsClinicContext) return;
     setLoading(true);
     try {
-      const [d, u] = await Promise.all([
-        doctorsApi.list(),
-        usersApi.list({ pageNumber: 1, pageSize: 100, role: UserRole.Doctor }),
-      ]);
+      const d = await doctorsApi.list();
       setItems(d);
-      setDoctors(u.data);
     } finally {
       setLoading(false);
     }
@@ -64,7 +72,7 @@ export function DoctorsPage() {
 
   useEffect(() => {
     load();
-  }, [needsClinicContext]);
+  }, [needsClinicContext, selectedClinicId]);
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -75,6 +83,13 @@ export function DoctorsPage() {
 
   const openEdit = (doctor: Doctor) => {
     setForm({
+      // User fields - not editable in edit mode
+      username: '',
+      password: '',
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      // Doctor fields
       userId: String(doctor.userId),
       specialization: doctor.specialization,
       licenseNumber: doctor.licenseNumber,
@@ -92,27 +107,38 @@ export function DoctorsPage() {
   const save = async () => {
     setError(null);
     try {
-      const data: Record<string, unknown> = {
-        specialization: form.specialization,
-        licenseNumber: form.licenseNumber,
-        yearsOfExperience: Number(form.yearsOfExperience),
-        consultationFee: Number(form.consultationFee),
-        department: form.department || undefined,
-        bio: form.bio || undefined,
-        isAvailable: form.isAvailable,
-      };
-
       if (modal === 'create') {
         const body: Record<string, unknown> = {
-          userId: Number(form.userId),
-          ...data,
+          // User fields
+          username: form.username,
+          password: form.password,
+          fullName: form.fullName,
+          email: form.email,
+          phoneNumber: form.phoneNumber,
+          // Doctor fields
+          specialization: form.specialization,
+          licenseNumber: form.licenseNumber,
+          yearsOfExperience: Number(form.yearsOfExperience),
+          consultationFee: Number(form.consultationFee),
+          department: form.department || undefined,
+          bio: form.bio || undefined,
+          isAvailable: form.isAvailable,
         };
         if (isSuperAdmin && selectedClinicId) {
           body.clinicId = selectedClinicId;
         }
         await doctorsApi.create(body);
       } else if (editId) {
-        await doctorsApi.update(editId, data);
+        const body: Record<string, unknown> = {
+          specialization: form.specialization,
+          licenseNumber: form.licenseNumber,
+          yearsOfExperience: Number(form.yearsOfExperience),
+          consultationFee: Number(form.consultationFee),
+          department: form.department || undefined,
+          bio: form.bio || undefined,
+          isAvailable: form.isAvailable,
+        };
+        await doctorsApi.update(editId, body);
       }
       setModal(null);
       load();
@@ -192,17 +218,41 @@ export function DoctorsPage() {
         )}
         <div className="space-y-3">
           {modal === 'create' && (
-            <Select
-              label="Doctor user"
-              value={form.userId}
-              onChange={(e) => setForm({ ...form, userId: e.target.value })}
-              options={[
-                { value: '', label: 'Select…' },
-                ...doctors
-                  .filter((d) => !items.some((x) => x.userId === d.id))
-                  .map((d) => ({ value: d.id, label: d.fullName })),
-              ]}
-            />
+            <>
+              <p className="text-sm text-slate-600 mb-2">Create doctor account and profile</p>
+              <Input
+                label="Username"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                placeholder="johndoe"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Minimum 6 characters"
+              />
+              <Input
+                label="Full name"
+                value={form.fullName}
+                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                placeholder="Dr. John Doe"
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="john@example.com"
+              />
+              <Input
+                label="Phone number"
+                value={form.phoneNumber}
+                onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+                placeholder="1234567890"
+              />
+            </>
           )}
           <Input
             label="Specialization"

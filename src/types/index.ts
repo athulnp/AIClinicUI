@@ -43,6 +43,13 @@ export interface PagedResponse<T> {
   hasNext: boolean;
 }
 
+export interface Role {
+  id: number;
+  name: string;
+  description?: string;
+  isPlatformRole: boolean;
+}
+
 export interface User {
   id: number;
   clinicId?: number | null;
