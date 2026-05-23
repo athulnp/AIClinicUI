@@ -1,0 +1,11 @@
+{
+  "configurations": {
+    "production": {
+      "appLocation": "/",
+      "apiLocation": "",
+      "outputLocation": "dist",
+      "appBuildCommand": "npm run build",
+      "apiBuildCommand": ""
+    }
+  }
+}

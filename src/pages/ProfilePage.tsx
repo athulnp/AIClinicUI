@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ApiError } from '../api/client';
 import { usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { roleLabels } from '../utils/labels';
 import { Alert, Button, Card, CardHeader, Input } from '../components/ui';
 
 export function ProfilePage() {

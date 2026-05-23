@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
-import { doctorsApi, usersApi } from '../api/services';
+import { doctorsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { type Doctor, type User } from '../types';
-import { Alert, Button, Card, CardHeader, Input, PageLoader, Select } from '../components/ui';
+import { type Doctor } from '../types';
+import { Alert, Button, Card, CardHeader, Input, PageLoader } from '../components/ui';
 
 export function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { needsClinicContext } = useAuth();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,11 +43,6 @@ export function DoctorDetailPage() {
         bio: doc.bio || '',
         isAvailable: doc.isAvailable ?? true,
       });
-      if (doc.userId) {
-        const usr = await usersApi.list({ pageNumber: 1, pageSize: 1 });
-        const foundUser = usr.data.find((u) => u.id === doc.userId);
-        if (foundUser) setUser(foundUser);
-      }
     } finally {
       setLoading(false);
     }

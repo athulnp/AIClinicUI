@@ -155,9 +155,11 @@ export function ClinicDetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Status</label>
-                <Badge className="mt-1" variant={clinic.isActive ? 'success' : 'secondary'}>
-                  {clinic.isActive ? 'Active' : 'Inactive'}
-                </Badge>
+                <div className="mt-1">
+                  <Badge tone={clinic.isActive ? 'success' : 'default'}>
+                    {clinic.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
               </div>
               {clinic.createdAt && (
                 <div>

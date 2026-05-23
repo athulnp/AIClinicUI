@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { billingApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { PaymentMethod, PaymentStatus, type Billing, type Patient } from '../types';
-import { paymentMethodLabels, paymentStatusLabels } from '../utils/labels';
-import { Alert, Badge, Button, Card, CardHeader, Input, PageLoader, Select } from '../components/ui';
+import { PaymentMethod, type Billing, type Patient } from '../types';
+import { paymentMethodLabels } from '../utils/labels';
+import { Alert, Button, Card, CardHeader, Input, PageLoader, Select } from '../components/ui';
 
 export function BillingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +18,7 @@ export function BillingDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     amount: '',
-    paymentMethod: PaymentMethod.Cash,
+    paymentMethod: 1 as PaymentMethod,
     notes: '',
   });
 
@@ -65,7 +65,7 @@ export function BillingDetailPage() {
   if (loading) return <PageLoader />;
   if (!billing) return <div className="text-center text-slate-500">Billing record not found</div>;
 
-  const outstandingBalance = billing.totalAmount - billing.amountPaid;
+  const outstandingBalance = billing.totalAmount;
 
   return (
     <div className="space-y-6">
@@ -90,21 +90,11 @@ export function BillingDetailPage() {
                 <label className="text-sm font-medium text-slate-700">Invoice Number</label>
                 <p className="mt-1 text-slate-900">{billing.invoiceNumber}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
-                <Badge className="mt-1">{paymentStatusLabels[billing.status]}</Badge>
-              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium text-slate-700">Total Amount</label>
-                <p className="mt-1 text-lg font-semibold text-slate-900">₹{billing.totalAmount}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-slate-700">Amount Paid</label>
-                <p className="mt-1 text-lg font-semibold text-slate-900">₹{billing.amountPaid}</p>
-              </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Total Amount</label>
+              <p className="mt-1 text-lg font-semibold text-slate-900">₹{billing.totalAmount}</p>
             </div>
 
             <div>
@@ -157,9 +147,9 @@ export function BillingDetailPage() {
               onChange={(e) => setForm({ ...form, paymentMethod: Number(e.target.value) as PaymentMethod })}
               options={[
                 { value: String(PaymentMethod.Cash), label: paymentMethodLabels[PaymentMethod.Cash] },
+                { value: String(PaymentMethod.UPI), label: paymentMethodLabels[PaymentMethod.UPI] },
                 { value: String(PaymentMethod.Card), label: paymentMethodLabels[PaymentMethod.Card] },
-                { value: String(PaymentMethod.Online), label: paymentMethodLabels[PaymentMethod.Online] },
-                { value: String(PaymentMethod.Cheque), label: paymentMethodLabels[PaymentMethod.Cheque] },
+                { value: String(PaymentMethod.BankTransfer), label: paymentMethodLabels[PaymentMethod.BankTransfer] },
               ]}
             />
             <Input
