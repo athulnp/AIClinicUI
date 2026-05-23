@@ -16,7 +16,8 @@ import {
 export function ClinicsPage() {
   const [items, setItems] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState({ code: '', name: '', city: '', email: '', phoneNumber: '' });
 
   const load = async () => {
@@ -39,8 +40,44 @@ export function ClinicsPage() {
       phoneNumber: form.phoneNumber || undefined,
       country: 'India',
     });
-    setShowCreate(false);
+    setModal(null);
+    setForm({ code: '', name: '', city: '', email: '', phoneNumber: '' });
     load();
+  };
+
+  const openEdit = (clinic: Clinic) => {
+    setForm({
+      code: clinic.code,
+      name: clinic.name,
+      city: clinic.city || '',
+      email: clinic.email || '',
+      phoneNumber: clinic.phoneNumber || '',
+    });
+    setEditId(clinic.id);
+    setModal('edit');
+  };
+
+  const update = async () => {
+    if (!editId) return;
+    await clinicsApi.update(editId, {
+      code: form.code.toLowerCase().replace(/\s+/g, '-'),
+      name: form.name,
+      city: form.city || undefined,
+      email: form.email || undefined,
+      phoneNumber: form.phoneNumber || undefined,
+    });
+    setModal(null);
+    load();
+  };
+
+  const remove = async (id: number) => {
+    if (!confirm('Delete this clinic? This will affect all associated data.')) return;
+    try {
+      await clinicsApi.delete(id);
+      load();
+    } catch (e) {
+      alert('Delete failed');
+    }
   };
 
   if (loading) return <PageLoader />;
@@ -48,7 +85,7 @@ export function ClinicsPage() {
   return (
     <div>
       <Card>
-        <CardHeader title="Clinics (tenants)" action={<Button onClick={() => setShowCreate(true)}>Onboard clinic</Button>} />
+        <CardHeader title="Clinics (tenants)" action={<Button onClick={() => { setForm({ code: '', name: '', city: '', email: '', phoneNumber: '' }); setModal('create'); }}>Onboard clinic</Button>} />
         <p className="px-5 pb-2 text-sm text-slate-500">
           Each clinic is an isolated tenant. Staff log in with the clinic code or ID.
         </p>
@@ -60,6 +97,7 @@ export function ClinicsPage() {
               <th className="px-5 py-3">City</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3">Created</th>
+              <th className="px-5 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -72,6 +110,10 @@ export function ClinicsPage() {
                   <Badge tone={c.isActive ? 'success' : 'danger'}>{c.isActive ? 'Active' : 'Inactive'}</Badge>
                 </td>
                 <td className="px-5 py-3">{formatDate(c.createdAt)}</td>
+                <td className="px-5 py-3 text-right space-x-1">
+                  <Button variant="ghost" onClick={() => openEdit(c)}>Edit</Button>
+                  <Button variant="ghost" onClick={() => remove(c.id)}>Delete</Button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -79,15 +121,15 @@ export function ClinicsPage() {
         {items.length === 0 && <EmptyState message="No clinics onboarded yet." />}
       </Card>
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Onboard new clinic">
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === 'create' ? 'Onboard new clinic' : 'Edit clinic'}>
         <Input label="Code (slug)" placeholder="sunshine-dental" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
         <Input label="Name" className="mt-3" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <Input label="City" className="mt-3" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
         <Input label="Email" className="mt-3" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <Input label="Phone" className="mt-3" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} />
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-          <Button onClick={create}>Create clinic</Button>
+          <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={modal === 'create' ? create : update}>{modal === 'create' ? 'Create clinic' : 'Save changes'}</Button>
         </div>
       </Modal>
     </div>

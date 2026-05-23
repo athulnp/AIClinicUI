@@ -19,7 +19,7 @@ import {
 } from '../components/ui';
 
 export function UsersPage() {
-  const { needsClinicContext, user: currentUser } = useAuth();
+  const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -78,7 +78,7 @@ export function UsersPage() {
       fullName: user.fullName,
       email: user.email,
       phoneNumber: user.phoneNumber,
-      role: user.role,
+      role: user.roleId as UserRole,
     });
     setEditId(user.id);
     setError(null);
@@ -89,10 +89,14 @@ export function UsersPage() {
     setError(null);
     try {
       if (modal === 'create') {
-        await usersApi.create({ ...form, password: form.password, role: Number(form.role) });
+        const body: Record<string, unknown> = { ...form, password: form.password, roleId: Number(form.role) };
+        if (isSuperAdmin && selectedClinicId) {
+          body.clinicId = selectedClinicId;
+        }
+        await usersApi.create(body);
       } else if (editId) {
         const { password, ...data } = form;
-        await usersApi.update(editId, { ...data, role: Number(form.role) });
+        await usersApi.update(editId, { ...data, roleId: Number(form.role) });
       }
       setModal(null);
       load();
@@ -140,14 +144,16 @@ export function UsersPage() {
                   <td className="px-5 py-3 font-medium">{u.fullName}</td>
                   <td className="px-5 py-3">{u.username}</td>
                   <td className="px-5 py-3 text-xs">{u.email}</td>
-                  <td className="px-5 py-3">{roleLabels[u.role]}</td>
+                  <td className="px-5 py-3">{u.roleName}</td>
                   <td className="px-5 py-3">
                     <Badge tone={u.isActive ? 'success' : 'danger'}>{u.isActive ? 'Active' : 'Inactive'}</Badge>
                   </td>
                   <td className="px-5 py-3 text-right space-x-1">
                     <Link to={`/users/${u.id}`}>
-                      <Button variant="ghost" size="sm">Details</Button>
+                      <Button variant="ghost">Details</Button>
                     </Link>
+                    <Button variant="ghost" onClick={() => openEdit(u)}>Edit</Button>
+                    {u.isActive && <Button variant="ghost" onClick={() => deactivate(u.id)}>Deactivate</Button>}
                   </td>
                 </tr>
               ))}
@@ -159,6 +165,12 @@ export function UsersPage() {
 
       <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === 'create' ? 'New staff user' : 'Edit user'}>
         {error && <Alert message={error} />}
+        {isSuperAdmin && modal === 'create' && selectedClinicId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Clinic</label>
+            <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} disabled={modal === 'edit'} />
           {modal === 'create' && (

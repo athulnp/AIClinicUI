@@ -19,7 +19,7 @@ import {
 } from '../components/ui';
 
 export function AppointmentsPage() {
-  const { needsClinicContext } = useAuth();
+  const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<Appointment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -67,14 +67,18 @@ export function AppointmentsPage() {
   const create = async () => {
     setError(null);
     try {
-      await appointmentsApi.create({
+      const body: Record<string, unknown> = {
         patientId: Number(form.patientId),
         doctorId: Number(form.doctorId),
         appointmentDate: form.appointmentDate,
         startTime: toTimeSpan(form.startTime),
         endTime: toTimeSpan(form.endTime),
         reason: form.reason || undefined,
-      });
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await appointmentsApi.create(body);
       setShowCreate(false);
       load();
     } catch (e) {
@@ -190,6 +194,12 @@ export function AppointmentsPage() {
 
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Book appointment">
         {error && <Alert message={error} />}
+        {isSuperAdmin && selectedClinicId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Clinic</label>
+            <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
+          </div>
+        )}
         <div className="space-y-3">
           <Select
             label="Patient"

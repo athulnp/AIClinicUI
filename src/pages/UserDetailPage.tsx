@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, type User } from '../types';
-import { roleLabels } from '../utils/labels';
+import { type User } from '../types';
 import { Alert, Badge, Button, Card, CardHeader, Input, PageLoader, Select } from '../components/ui';
 
 export function UserDetailPage() {
@@ -20,7 +19,7 @@ export function UserDetailPage() {
     fullName: '',
     email: '',
     phoneNumber: '',
-    role: UserRole.Receptionist,
+    roleId: 0,
   });
 
   useEffect(() => {
@@ -40,7 +39,7 @@ export function UserDetailPage() {
           fullName: foundUser.fullName || '',
           email: foundUser.email || '',
           phoneNumber: foundUser.phoneNumber || '',
-          role: foundUser.role || UserRole.Receptionist,
+          roleId: foundUser.roleId,
         });
       }
     } finally {
@@ -79,7 +78,7 @@ export function UserDetailPage() {
   if (loading) return <PageLoader />;
   if (!user) return <div className="text-center text-slate-500">User not found</div>;
 
-  const canEdit = currentUser?.role === UserRole.SuperAdmin || Number(id) === currentUser?.id;
+  const canEdit = currentUser?.roleName === 'SuperAdmin' || Number(id) === currentUser?.id;
 
   return (
     <div className="space-y-6">
@@ -118,13 +117,13 @@ export function UserDetailPage() {
               />
               <Select
                 label="Role"
-                value={String(form.role)}
-                onChange={(e) => setForm({ ...form, role: Number(e.target.value) as UserRole })}
+                value={String(form.roleId)}
+                onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })}
                 options={[
-                  { value: String(UserRole.Receptionist), label: roleLabels[UserRole.Receptionist] },
-                  { value: String(UserRole.Doctor), label: roleLabels[UserRole.Doctor] },
-                  { value: String(UserRole.Manager), label: roleLabels[UserRole.Manager] },
-                  { value: String(UserRole.SuperAdmin), label: roleLabels[UserRole.SuperAdmin] },
+                  { value: '3', label: 'Receptionist' },
+                  { value: '2', label: 'Doctor' },
+                  { value: '1', label: 'Clinic Admin' },
+                  { value: '0', label: 'Super Admin' },
                 ]}
               />
               <div className="flex gap-2 pt-4">
@@ -152,11 +151,11 @@ export function UserDetailPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Role</label>
-                <Badge className="mt-1">{roleLabels[user.role]}</Badge>
+                <Badge tone="default">{user.roleName}</Badge>
               </div>
               <div>
                 <label className="text-sm font-medium text-slate-700">Status</label>
-                <Badge className="mt-1" variant={user.isActive ? 'success' : 'secondary'}>
+                <Badge tone={user.isActive ? 'success' : 'danger'}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>

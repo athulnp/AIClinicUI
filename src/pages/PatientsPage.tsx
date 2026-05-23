@@ -18,7 +18,6 @@ import {
 } from '../components/ui';
 
 const emptyForm: {
-  patientCode: string;
   fullName: string;
   gender: Gender;
   dateOfBirth: string;
@@ -31,7 +30,6 @@ const emptyForm: {
   emergencyContact: string;
   notes: string;
 } = {
-  patientCode: '',
   fullName: '',
   gender: Gender.Male,
   dateOfBirth: '',
@@ -46,7 +44,7 @@ const emptyForm: {
 };
 
 export function PatientsPage() {
-  const { needsClinicContext } = useAuth();
+  const { needsClinicContext, selectedClinicId, isSuperAdmin } = useAuth();
   const [items, setItems] = useState<Patient[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -84,7 +82,6 @@ export function PatientsPage() {
 
   const openEdit = (p: Patient) => {
     setForm({
-      patientCode: p.patientCode,
       fullName: p.fullName,
       gender: p.gender,
       dateOfBirth: p.dateOfBirth.split('T')[0],
@@ -105,10 +102,15 @@ export function PatientsPage() {
   const save = async () => {
     setError(null);
     try {
-      const { patientCode, ...rest } = form;
-      const body = { ...rest, gender: Number(form.gender) };
-      if (modal === 'create') await patientsApi.create({ ...body, patientCode });
-      else if (editId) await patientsApi.update(editId, body);
+      const body: Record<string, unknown> = { ...form, gender: Number(form.gender) };
+      if (modal === 'create') {
+        if (isSuperAdmin && selectedClinicId) {
+          body.clinicId = selectedClinicId;
+        }
+        await patientsApi.create(body);
+      } else if (editId) {
+        await patientsApi.update(editId, body);
+      }
       setModal(null);
       load();
     } catch (e) {
@@ -189,10 +191,19 @@ export function PatientsPage() {
 
       <Modal open={!!modal} onClose={() => setModal(null)} title={modal === 'create' ? 'New patient' : 'Edit patient'}>
         {error && <Alert message={error} />}
+        {modal === 'edit' && editId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Patient Code</label>
+            <p className="mt-1 font-mono text-sm text-slate-600">{items.find(p => p.id === editId)?.patientCode}</p>
+          </div>
+        )}
+        {isSuperAdmin && modal === 'create' && selectedClinicId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Clinic</label>
+            <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2">
-          {modal === 'create' && (
-            <Input label="Patient code" value={form.patientCode} onChange={(e) => setForm({ ...form, patientCode: e.target.value })} required />
-          )}
           <Input label="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
           <Select label="Gender" value={form.gender} onChange={(e) => setForm({ ...form, gender: Number(e.target.value) as Gender })} options={Object.entries(genderLabels).map(([k, v]) => ({ value: k, label: v }))} />
           <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />

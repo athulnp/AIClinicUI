@@ -1,8 +1,8 @@
 export const UserRole = {
-  SuperAdmin: 0,
-  Admin: 1,
-  Doctor: 2,
-  Receptionist: 3,
+  SuperAdmin: 1,
+  Admin: 2,
+  Doctor: 3,
+  Receptionist: 4,
 } as const;
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
@@ -51,7 +51,9 @@ export interface User {
   fullName: string;
   email: string;
   phoneNumber: string;
-  role: UserRole;
+  roleId: number;
+  roleName: string;
+  permissions: string[];
   isActive: boolean;
   createdAt: string;
 }

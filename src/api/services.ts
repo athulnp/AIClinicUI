@@ -34,10 +34,12 @@ export const clinicsApi = {
     return apiRequest<PagedResponse<Clinic>>(`/api/clinics?${q}`);
   },
   getByCode: (code: string) => apiRequest<Clinic>(`/api/clinics/code/${code}`),
+  get: (id: number) => apiRequest<Clinic>(`/api/clinics/${id}`),
   create: (data: Partial<Clinic>) =>
     apiRequest<Clinic>('/api/clinics', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Partial<Clinic>) =>
     apiRequest<Clinic>(`/api/clinics/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => apiRequest(`/api/clinics/${id}`, { method: 'DELETE' }),
 };
 
 export const usersApi = {
@@ -136,6 +138,9 @@ export const billingApi = {
   },
   create: (data: Record<string, unknown>) =>
     apiRequest<ApiResponse<Billing>>('/api/billing', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Record<string, unknown>) =>
+    apiRequest<ApiResponse<Billing>>(`/api/billing/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => apiRequest(`/api/billing/${id}`, { method: 'DELETE' }),
   recordPayment: (id: number, data: Record<string, unknown>) =>
     apiRequest<ApiResponse<Billing>>(`/api/billing/${id}/payment`, {
       method: 'POST',
