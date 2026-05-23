@@ -5,9 +5,11 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
+  Menu,
   Stethoscope,
   UserCircle,
   Users,
+  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -30,6 +32,7 @@ export function Layout() {
     useAuth();
   const navigate = useNavigate();
   const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (isSuperAdmin) {
@@ -47,13 +50,30 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-64 flex-col bg-brand-800 text-white">
-        <div className="border-b border-brand-700 px-5 py-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-brand-200">AI Dental OS</p>
-          <h1 className="text-lg font-bold">Clinic Portal</h1>
-          {user?.clinicName && (
-            <p className="mt-1 truncate text-sm text-brand-100">{user.clinicName}</p>
-          )}
+      {/* Mobile menu overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 flex-col bg-brand-800 text-white transition-transform duration-300 lg:static lg:transform-none ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="flex items-center justify-between border-b border-brand-700 px-5 py-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wider text-brand-200">AI Dental OS</p>
+            <h1 className="text-lg font-bold">Clinic Portal</h1>
+            {user?.clinicName && (
+              <p className="mt-1 truncate text-sm text-brand-100">{user.clinicName}</p>
+            )}
+          </div>
+          <button
+            className="lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <X size={24} />
+          </button>
         </div>
 
         {isSuperAdmin && (
@@ -78,7 +98,7 @@ export function Layout() {
           </div>
         )}
 
-        <nav className="flex-1 space-y-1 p-3">
+        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
           {nav.filter(canSee).map((item) => (
             <NavLink
               key={item.to}
@@ -89,6 +109,7 @@ export function Layout() {
                   isActive ? 'bg-brand-600 text-white' : 'text-brand-100 hover:bg-brand-700'
                 }`
               }
+              onClick={() => setMobileMenuOpen(false)}
             >
               <item.icon size={18} />
               {item.label}
@@ -103,14 +124,20 @@ export function Layout() {
             <Button
               variant="ghost"
               className="flex-1 !text-brand-100 hover:!bg-brand-700"
-              onClick={() => navigate('/profile')}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                navigate('/profile');
+              }}
             >
               Profile
             </Button>
             <Button
               variant="ghost"
               className="!text-brand-100 hover:!bg-brand-700"
-              onClick={() => logout().then(() => navigate('/login'))}
+              onClick={() => logout().then(() => {
+                setMobileMenuOpen(false);
+                navigate('/login');
+              })}
             >
               <LogOut size={16} />
             </Button>
@@ -118,13 +145,27 @@ export function Layout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      {/* Main content */}
+      <main className="flex-1 overflow-auto w-full">
+        {/* Mobile header */}
+        <div className="lg:hidden flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
+          <div className="text-sm font-medium">
+            {user?.clinicName || 'AI Dental OS'}
+          </div>
+          <div className="w-6" />
+        </div>
+
         {needsClinicContext && (
-          <div className="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-900">
+          <div className="border-b border-amber-200 bg-amber-50 px-4 sm:px-6 py-3 text-sm text-amber-900">
             Select a clinic in the sidebar to manage patients, appointments, and billing.
           </div>
         )}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <Outlet />
         </div>
       </main>
