@@ -45,21 +45,21 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-[#005d90] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
-            <Building2 size={32} />
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="mx-auto mb-3 sm:mb-4 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-lg bg-[#005d90] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <Building2 size={28} className="sm:size-32" />
           </div>
-          <h1 className="text-3xl font-bold text-[#191c1d] tracking-tight">AI Dental OS</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d] tracking-tight">AI Dental OS</h1>
           <p className="mt-2 text-[#404850]">Multi-clinic practice management</p>
         </div>
 
-        <Card className="p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-0 bg-white">
-          <div className="mb-6 flex rounded-lg bg-[#f3f4f5] p-1">
+        <Card className="p-5 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-0 bg-white">
+          <div className="mb-5 sm:mb-6 flex rounded-lg bg-[#f3f4f5] p-1">
             <button
               type="button"
-              className={`flex-1 rounded-md py-2.5 text-sm font-semibold transition-all ${
+              className={`flex-1 rounded-md py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all ${
                 mode === 'clinic' 
                   ? 'bg-white shadow-md text-[#005d90]' 
                   : 'text-[#404850] hover:text-[#191c1d]'
@@ -70,7 +70,7 @@ export function LoginPage() {
             </button>
             <button
               type="button"
-              className={`flex-1 rounded-md py-2.5 text-sm font-semibold transition-all ${
+              className={`flex-1 rounded-md py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all ${
                 mode === 'platform' 
                   ? 'bg-white shadow-md text-[#005d90]' 
                   : 'text-[#404850] hover:text-[#191c1d]'
@@ -81,19 +81,19 @@ export function LoginPage() {
             </button>
           </div>
 
-          <form onSubmit={submit} className="space-y-5">
+          <form onSubmit={submit} className="space-y-4 sm:space-y-5">
             {error && <Alert message={error} errors={errors} />}
 
             {mode === 'clinic' && (
-              <div className="space-y-4">
-                <label className="flex items-center gap-3 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4] cursor-pointer hover:bg-[#edeeef] transition-colors">
+              <div className="space-y-3 sm:space-y-4">
+                <label className="flex items-center gap-3 p-3 sm:p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4] cursor-pointer hover:bg-[#edeeef] transition-colors">
                   <input 
                     type="checkbox" 
                     checked={useId} 
                     onChange={(e) => setUseId(e.target.checked)} 
                     className="w-5 h-5 rounded border-[#bfc7d1] text-[#005d90] focus:ring-[#005d90]"
                   />
-                  <span className="text-sm font-medium text-[#191c1d]">Login with clinic ID instead of code</span>
+                  <span className="text-xs sm:text-sm font-medium text-[#191c1d]">Login with clinic ID instead of code</span>
                 </label>
                 {useId ? (
                   <Input
@@ -146,7 +146,7 @@ export function LoginPage() {
           </form>
 
           {mode === 'clinic' && (
-            <div className="mt-6 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
+            <div className="mt-5 sm:mt-6 p-3 sm:p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
               <div className="flex items-center gap-2 mb-2">
                 <Shield size={16} className="text-[#707881]" />
                 <p className="text-xs font-semibold text-[#191c1d]">Demo credentials</p>
@@ -159,7 +159,7 @@ export function LoginPage() {
             </div>
           )}
           {mode === 'platform' && (
-            <div className="mt-6 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
+            <div className="mt-5 sm:mt-6 p-3 sm:p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
               <div className="flex items-center gap-2 mb-2">
                 <Shield size={16} className="text-[#707881]" />
                 <p className="text-xs font-semibold text-[#191c1d]">Demo credentials</p>
