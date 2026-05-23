@@ -8,10 +8,15 @@ import { DashboardPage } from './pages/DashboardPage';
 import { PatientsPage } from './pages/PatientsPage';
 import { PatientDetailPage } from './pages/PatientDetailPage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
+import { AppointmentDetailPage } from './pages/AppointmentDetailPage';
 import { BillingPage } from './pages/BillingPage';
+import { BillingDetailPage } from './pages/BillingDetailPage';
 import { DoctorsPage } from './pages/DoctorsPage';
+import { DoctorDetailPage } from './pages/DoctorDetailPage';
 import { UsersPage } from './pages/UsersPage';
+import { UserDetailPage } from './pages/UserDetailPage';
 import { ClinicsPage } from './pages/ClinicsPage';
+import { ClinicDetailPage } from './pages/ClinicDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PageLoader, ToastContainer } from './components/ui';
 
@@ -40,10 +45,15 @@ export default function App() {
               <Route path="/patients" element={<PatientsPage />} />
               <Route path="/patients/:id" element={<PatientDetailPage />} />
               <Route path="/appointments" element={<AppointmentsPage />} />
+              <Route path="/appointments/:id" element={<AppointmentDetailPage />} />
               <Route path="/doctors" element={<DoctorsPage />} />
+              <Route path="/doctors/:id" element={<DoctorDetailPage />} />
               <Route path="/billing" element={<BillingPage />} />
+              <Route path="/billing/:id" element={<BillingDetailPage />} />
               <Route path="/users" element={<UsersPage />} />
+              <Route path="/users/:id" element={<UserDetailPage />} />
               <Route path="/clinics" element={<ClinicsPage />} />
+              <Route path="/clinics/:id" element={<ClinicDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

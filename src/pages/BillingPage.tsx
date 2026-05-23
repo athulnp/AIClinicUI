@@ -18,14 +18,15 @@ import {
 } from '../components/ui';
 
 export function BillingPage() {
-  const { needsClinicContext } = useAuth();
+  const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [tab, setTab] = useState<'all' | 'outstanding'>('all');
   const [items, setItems] = useState<Billing[]>([]);
   const [outstanding, setOutstanding] = useState<Billing[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [payOpen, setPayOpen] = useState<Billing | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{ patientId: string; totalAmount: string; paymentMethod: PaymentMethod; notes: string }>({
     patientId: '',
@@ -59,17 +60,59 @@ export function BillingPage() {
   const create = async () => {
     setError(null);
     try {
-      await billingApi.create({
+      const body: Record<string, unknown> = {
+        patientId: Number(form.patientId),
+        totalAmount: Number(form.totalAmount),
+        paymentMethod: Number(form.paymentMethod),
+        notes: form.notes || undefined,
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await billingApi.create(body);
+      setModal(null);
+      setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' });
+      load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Failed to create invoice');
+    }
+  };
+
+  const openEdit = (billing: Billing) => {
+    setForm({
+      patientId: String(billing.patientId),
+      totalAmount: String(billing.totalAmount),
+      paymentMethod: billing.paymentMethod,
+      notes: billing.notes || '',
+    });
+    setEditId(billing.id);
+    setError(null);
+    setModal('edit');
+  };
+
+  const update = async () => {
+    setError(null);
+    try {
+      await billingApi.update(editId!, {
         patientId: Number(form.patientId),
         totalAmount: Number(form.totalAmount),
         paymentMethod: Number(form.paymentMethod),
         notes: form.notes || undefined,
       });
-      setCreateOpen(false);
-      setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' });
+      setModal(null);
       load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create invoice');
+      setError(e instanceof ApiError ? e.message : 'Failed to update invoice');
+    }
+  };
+
+  const remove = async (id: number) => {
+    if (!confirm('Delete this invoice?')) return;
+    try {
+      await billingApi.delete(id);
+      load();
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : 'Delete failed');
     }
   };
 
@@ -116,7 +159,7 @@ export function BillingPage() {
       </div>
 
       <Card>
-        <CardHeader title="Invoices" action={<Button onClick={() => setCreateOpen(true)}>New invoice</Button>} />
+        <CardHeader title="Invoices" action={<Button onClick={() => { setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' }); setModal('create'); }}>New invoice</Button>} />
         <div className="border-b border-slate-100 px-5 py-3">
           <div className="flex gap-2">
             <button
@@ -159,12 +202,14 @@ export function BillingPage() {
                       {paymentStatusLabels[b.paymentStatus]}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3 text-right">
+                  <td className="px-5 py-3 text-right space-x-1">
                     {b.balanceAmount > 0 && (
                       <Button variant="ghost" onClick={() => { setPayOpen(b); setPayAmount(String(b.balanceAmount)); }}>
                         Pay
                       </Button>
                     )}
+                    <Button variant="ghost" onClick={() => openEdit(b)}>Edit</Button>
+                    <Button variant="ghost" onClick={() => remove(b.id)}>Delete</Button>
                   </td>
                 </tr>
               ))}
@@ -174,8 +219,14 @@ export function BillingPage() {
         </div>
       </Card>
 
-      <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New invoice">
+      <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === 'create' ? 'New invoice' : 'Edit invoice'}>
         {error && <Alert message={error} />}
+        {isSuperAdmin && modal === 'create' && selectedClinicId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Clinic</label>
+            <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
+          </div>
+        )}
         <div className="space-y-3">
           <Select
             label="Patient"
@@ -193,8 +244,8 @@ export function BillingPage() {
           <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setCreateOpen(false)}>Cancel</Button>
-          <Button onClick={create}>Create</Button>
+          <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
+          <Button onClick={modal === 'create' ? create : update}>{modal === 'create' ? 'Create' : 'Save'}</Button>
         </div>
       </Modal>
 

@@ -52,7 +52,7 @@ export function ProfilePage() {
             <span className="font-medium text-slate-800">Username:</span> {user?.username}
           </p>
           <p>
-            <span className="font-medium text-slate-800">Role:</span> {user && roleLabels[user.role]}
+            <span className="font-medium text-slate-800">Role:</span> {user?.roleName}
           </p>
           {user?.clinicName && (
             <p>

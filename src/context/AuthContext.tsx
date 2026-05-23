@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { authApi } from '../api/services';
-import { UserRole, type User } from '../types';
+import { type User } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -67,23 +67,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await authApi.login(payload);
 
       // Normalize possible response shapes from the API:
-      // 1) LoginResponse { token, refreshToken, user }
+      // 1) LoginResponse { token, refreshToken, user } (direct return from API)
       // 2) ApiResponse<LoginResponse> { success, data: { token, refreshToken, user } }
-      // 3) Legacy { user } (no token)
       let token: string | undefined;
       let refresh: string | undefined;
       let u: any = undefined;
 
       if (res) {
+        // Check for direct LoginResponse (case 1)
         if ((res as any).token) {
           token = (res as any).token;
           refresh = (res as any).refreshToken;
           u = (res as any).user;
-        } else if ((res as any).data) {
+        }
+        // Check for wrapped ApiResponse (case 2)
+        else if ((res as any).data && (res as any).data.token) {
           token = (res as any).data.token;
           refresh = (res as any).data.refreshToken;
           u = (res as any).data.user;
-        } else if ((res as any).user) {
+        }
+        // Fallback for other shapes
+        else if ((res as any).user) {
           u = (res as any).user;
           token = (res as any).token ?? (res as any).accessToken;
           refresh = (res as any).refreshToken;
@@ -91,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!token || !u) {
-        // If token missing, throw so caller can show error
+        console.error('Login response:', res);
         throw new Error('Invalid login response from server');
       }
 
@@ -131,15 +135,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         // Clear invalid token on 401
-        localStorage.clear();
-        setToken(null);
-        setUser(null);
-        setSelectedClinicIdState(null);
+        if ((err as any)?.status === 401) {
+          localStorage.clear();
+          setToken(null);
+          setUser(null);
+          setSelectedClinicIdState(null);
+        }
       })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, selectedClinicId]);
 
-  const isSuperAdmin = user?.role === UserRole.SuperAdmin;
+  const isSuperAdmin = user?.roleName === 'SuperAdmin';
   const isClinicStaff = user != null && !isSuperAdmin;
   const needsClinicContext = isSuperAdmin && !selectedClinicId && !user?.clinicId;
 

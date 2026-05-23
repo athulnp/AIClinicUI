@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { doctorsApi, usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +18,7 @@ import {
 } from '../components/ui';
 
 export function DoctorsPage() {
-  const { needsClinicContext } = useAuth();
+  const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<Doctor[]>([]);
   const [doctors, setDoctors] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +92,7 @@ export function DoctorsPage() {
   const save = async () => {
     setError(null);
     try {
-      const data = {
+      const data: Record<string, unknown> = {
         specialization: form.specialization,
         licenseNumber: form.licenseNumber,
         yearsOfExperience: Number(form.yearsOfExperience),
@@ -102,10 +103,14 @@ export function DoctorsPage() {
       };
 
       if (modal === 'create') {
-        await doctorsApi.create({
+        const body: Record<string, unknown> = {
           userId: Number(form.userId),
           ...data,
-        });
+        };
+        if (isSuperAdmin && selectedClinicId) {
+          body.clinicId = selectedClinicId;
+        }
+        await doctorsApi.create(body);
       } else if (editId) {
         await doctorsApi.update(editId, data);
       }
@@ -163,6 +168,9 @@ export function DoctorsPage() {
                     </Badge>
                   </td>
                   <td className="px-5 py-3 text-right space-x-1">
+                    <Link to={`/doctors/${d.id}`}>
+                      <Button variant="ghost">Details</Button>
+                    </Link>
                     <Button variant="ghost" onClick={() => openEdit(d)}>Edit</Button>
                     <Button variant="ghost" onClick={() => remove(d.id)}>Delete</Button>
                   </td>
@@ -176,6 +184,12 @@ export function DoctorsPage() {
 
       <Modal open={modal !== null} onClose={() => setModal(null)} title={modal === 'create' ? 'Add doctor' : 'Edit doctor'}>
         {error && <Alert message={error} />}
+        {isSuperAdmin && modal === 'create' && selectedClinicId && (
+          <div className="mb-3">
+            <label className="text-sm font-medium text-slate-700">Clinic</label>
+            <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
+          </div>
+        )}
         <div className="space-y-3">
           {modal === 'create' && (
             <Select

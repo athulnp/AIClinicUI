@@ -4,7 +4,7 @@ import { appointmentsApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import type { Appointment, Patient } from '../types';
 import { appointmentStatusLabels, formatDate, formatTime } from '../utils/labels';
-import { Alert, Badge, Button, Card, CardHeader, EmptyState, Input, Modal, PageLoader } from '../components/ui';
+import { Alert, Badge, Button, Card, CardHeader, EmptyState, Input, PageLoader } from '../components/ui';
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>();
