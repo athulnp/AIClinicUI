@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Button, Card, Input } from '../components/ui';
+import { Building2, Lock, User, Shield } from 'lucide-react';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -44,86 +45,133 @@ export function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-800 via-brand-700 to-slate-900 p-4">
-      <Card className="w-full max-w-md !border-0 p-8 shadow-xl">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-2xl text-white">
-            🦷
+    <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-[#005d90] text-white shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <Building2 size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">AI Dental OS</h1>
-          <p className="mt-1 text-sm text-slate-500">Multi-clinic practice management</p>
+          <h1 className="text-3xl font-bold text-[#191c1d] tracking-tight">AI Dental OS</h1>
+          <p className="mt-2 text-[#404850]">Multi-clinic practice management</p>
         </div>
 
-        <div className="mb-6 flex rounded-lg bg-slate-100 p-1">
-          <button
-            type="button"
-            className={`flex-1 rounded-md py-2 text-sm font-medium ${mode === 'clinic' ? 'bg-white shadow text-brand-700' : 'text-slate-600'}`}
-            onClick={() => setMode('clinic')}
-          >
-            Clinic staff
-          </button>
-          <button
-            type="button"
-            className={`flex-1 rounded-md py-2 text-sm font-medium ${mode === 'platform' ? 'bg-white shadow text-brand-700' : 'text-slate-600'}`}
-            onClick={() => setMode('platform')}
-          >
-            Platform admin
-          </button>
-        </div>
+        <Card className="p-8 shadow-[0_4px_20px_rgba(0,0,0,0.05)] border-0 bg-white">
+          <div className="mb-6 flex rounded-lg bg-[#f3f4f5] p-1">
+            <button
+              type="button"
+              className={`flex-1 rounded-md py-2.5 text-sm font-semibold transition-all ${
+                mode === 'clinic' 
+                  ? 'bg-white shadow-md text-[#005d90]' 
+                  : 'text-[#404850] hover:text-[#191c1d]'
+              }`}
+              onClick={() => setMode('clinic')}
+            >
+              Clinic Staff
+            </button>
+            <button
+              type="button"
+              className={`flex-1 rounded-md py-2.5 text-sm font-semibold transition-all ${
+                mode === 'platform' 
+                  ? 'bg-white shadow-md text-[#005d90]' 
+                  : 'text-[#404850] hover:text-[#191c1d]'
+              }`}
+              onClick={() => setMode('platform')}
+            >
+              Platform Admin
+            </button>
+          </div>
 
-        <form onSubmit={submit} className="space-y-4">
-          {error && <Alert message={error} errors={errors} />}
+          <form onSubmit={submit} className="space-y-5">
+            {error && <Alert message={error} errors={errors} />}
+
+            {mode === 'clinic' && (
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4] cursor-pointer hover:bg-[#edeeef] transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={useId} 
+                    onChange={(e) => setUseId(e.target.checked)} 
+                    className="w-5 h-5 rounded border-[#bfc7d1] text-[#005d90] focus:ring-[#005d90]"
+                  />
+                  <span className="text-sm font-medium text-[#191c1d]">Login with clinic ID instead of code</span>
+                </label>
+                {useId ? (
+                  <Input
+                    label="Clinic ID"
+                    type="number"
+                    value={clinicId}
+                    onChange={(e) => setClinicId(e.target.value)}
+                    placeholder="1"
+                    required
+                  />
+                ) : (
+                  <Input
+                    label="Clinic code"
+                    value={clinicCode}
+                    onChange={(e) => setClinicCode(e.target.value)}
+                    placeholder="demo-dental"
+                    required
+                  />
+                )}
+              </div>
+            )}
+
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#707881]" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                required
+                className="w-full rounded-lg border border-[#bfc7d1] bg-white pl-12 pr-4 py-3 text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all placeholder:text-[#707881]"
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#707881]" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                className="w-full rounded-lg border border-[#bfc7d1] bg-white pl-12 pr-4 py-3 text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all placeholder:text-[#707881]"
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Signing in…' : 'Sign in'}
+            </Button>
+          </form>
 
           {mode === 'clinic' && (
-            <>
-              <label className="flex items-center gap-2 text-sm text-slate-600">
-                <input type="checkbox" checked={useId} onChange={(e) => setUseId(e.target.checked)} />
-                Login with clinic ID instead of code
-              </label>
-              {useId ? (
-                <Input
-                  label="Clinic ID"
-                  type="number"
-                  value={clinicId}
-                  onChange={(e) => setClinicId(e.target.value)}
-                  placeholder="1"
-                  required
-                />
-              ) : (
-                <Input
-                  label="Clinic code"
-                  value={clinicCode}
-                  onChange={(e) => setClinicCode(e.target.value)}
-                  placeholder="demo-dental"
-                  required
-                />
-              )}
-            </>
+            <div className="mt-6 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={16} className="text-[#707881]" />
+                <p className="text-xs font-semibold text-[#191c1d]">Demo credentials</p>
+              </div>
+              <p className="text-xs text-[#404850]">
+                Clinic code: <span className="font-mono bg-[#e7e8e9] px-1 rounded">demo-dental</span> • 
+                Username: <span className="font-mono bg-[#e7e8e9] px-1 rounded">admin</span> • 
+                Password: <span className="font-mono bg-[#e7e8e9] px-1 rounded">Admin@123</span>
+              </p>
+            </div>
           )}
-
-          <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign in'}
-          </Button>
-        </form>
-
-        {mode === 'clinic' && (
-          <p className="mt-6 text-center text-xs text-slate-400">
-            Demo: demo-dental / admin / Admin@123
-          </p>
-        )}
-        {mode === 'platform' && (
-          <p className="mt-6 text-center text-xs text-slate-400">Demo: superadmin / SuperAdmin@123</p>
-        )}
-      </Card>
+          {mode === 'platform' && (
+            <div className="mt-6 p-4 rounded-lg bg-[#f8f9fa] border border-[#e1e3e4]">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={16} className="text-[#707881]" />
+                <p className="text-xs font-semibold text-[#191c1d]">Demo credentials</p>
+              </div>
+              <p className="text-xs text-[#404850]">
+                Username: <span className="font-mono bg-[#e7e8e9] px-1 rounded">superadmin</span> • 
+                Password: <span className="font-mono bg-[#e7e8e9] px-1 rounded">SuperAdmin@123</span>
+              </p>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

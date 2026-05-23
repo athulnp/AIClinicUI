@@ -149,30 +149,32 @@ export function PatientsPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-5 py-3">Code</th>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Phone</th>
-                <th className="px-5 py-3">DOB</th>
-                <th className="px-5 py-3">Gender</th>
-                <th className="px-5 py-3" />
+                <th className="px-6 py-4 font-semibold text-slate-700">Code</th>
+                <th className="px-6 py-4 font-semibold text-slate-700">Name</th>
+                <th className="px-6 py-4 font-semibold text-slate-700">Phone</th>
+                <th className="px-6 py-4 font-semibold text-slate-700">DOB</th>
+                <th className="px-6 py-4 font-semibold text-slate-700">Gender</th>
+                <th className="px-6 py-4 font-semibold text-slate-700 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {items.map((p) => (
-                <tr key={p.id} className="border-t border-slate-100">
-                  <td className="px-5 py-3 font-mono text-xs">{p.patientCode}</td>
-                  <td className="px-5 py-3 font-medium">{p.fullName}</td>
-                  <td className="px-5 py-3">{p.phoneNumber}</td>
-                  <td className="px-5 py-3">{formatDate(p.dateOfBirth)}</td>
-                  <td className="px-5 py-3">{genderLabels[p.gender]}</td>
-                  <td className="px-5 py-3 text-right space-x-1">
-                    <Link to={`/patients/${p.id}`}>
-                      <Button variant="ghost">View</Button>
-                    </Link>
-                    <Button variant="ghost" onClick={() => openEdit(p)}>Edit</Button>
-                    <Button variant="ghost" onClick={() => remove(p.id)}>Delete</Button>
+                <tr key={p.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4 font-mono text-xs text-slate-600 bg-slate-50/30 rounded-lg">{p.patientCode}</td>
+                  <td className="px-6 py-4 font-medium text-slate-900">{p.fullName}</td>
+                  <td className="px-6 py-4 text-slate-600">{p.phoneNumber}</td>
+                  <td className="px-6 py-4 text-slate-600">{formatDate(p.dateOfBirth)}</td>
+                  <td className="px-6 py-4">{genderLabels[p.gender]}</td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link to={`/patients/${p.id}`}>
+                        <Button variant="ghost">View</Button>
+                      </Link>
+                      <Button variant="ghost" onClick={() => openEdit(p)}>Edit</Button>
+                      <Button variant="ghost" onClick={() => remove(p.id)}>Delete</Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -180,11 +182,11 @@ export function PatientsPage() {
           </table>
           {items.length === 0 && <EmptyState message="No patients found." />}
         </div>
-        <div className="flex justify-between px-5 py-3 text-sm text-slate-500">
-          <span>{total} total</span>
+        <div className="flex justify-between items-center px-6 py-4 text-sm text-slate-500 border-t border-slate-100">
+          <span className="font-medium">{total} total</span>
           <div className="flex gap-2">
-            <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Prev</Button>
-            <Button variant="secondary" disabled={page * 10 >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
+            <Button variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Previous</Button>
+            <Button variant="outline" disabled={page * 10 >= total} onClick={() => setPage((p) => p + 1)}>Next</Button>
           </div>
         </div>
       </Card>
