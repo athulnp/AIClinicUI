@@ -101,7 +101,7 @@ export function UserDetailPage() {
             <p className="text-sm text-[#404850]">{editMode ? 'Update user information below' : 'View and manage user details'}</p>
           </div>
           {editMode ? (
-            <div className="space-y-3 sm:space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
               <Input
                 label="Full Name"
                 value={form.fullName}
@@ -130,14 +130,14 @@ export function UserDetailPage() {
                 ]}
               />
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleUpdate} className="flex-1">
+                <Button type="submit" className="flex-1">
                   Save Changes
                 </Button>
-                <Button onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
+                <Button type="button" onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
                   Cancel
                 </Button>
               </div>
-            </div>
+            </form>
           ) : (
             <div className="space-y-3 sm:space-y-4">
               <div>

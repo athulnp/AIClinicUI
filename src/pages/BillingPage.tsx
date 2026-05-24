@@ -226,7 +226,7 @@ export function BillingPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); modal === 'create' ? create() : update(); }} className="space-y-3">
           <Select
             label="Patient"
             value={form.patientId}
@@ -241,17 +241,17 @@ export function BillingPage() {
             options={Object.entries(paymentMethodLabels).map(([k, v]) => ({ value: k, label: v }))}
           />
           <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-        </div>
-        <div className="mt-3 sm:mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-          <Button onClick={modal === 'create' ? create : update} className="flex-1">{modal === 'create' ? 'Create' : 'Save'}</Button>
-        </div>
+          <div className="mt-3 sm:mt-4 flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">{modal === 'create' ? 'Create' : 'Save'}</Button>
+          </div>
+        </form>
       </Modal>
 
       <Modal open={!!payOpen} onClose={() => setPayOpen(null)} title="Record payment">
         {error && <Alert message={error} />}
         {payOpen && (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); recordPayment(); }}>
             <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
               <div>
                 <span className="font-medium text-slate-700">Invoice:</span> {payOpen.invoiceNumber}
@@ -271,10 +271,10 @@ export function BillingPage() {
             </div>
             <Input label="Payment amount" type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
             <div className="mt-3 sm:mt-4 flex gap-2">
-              <Button variant="secondary" onClick={() => setPayOpen(null)} className="flex-1">Cancel</Button>
-              <Button onClick={recordPayment} className="flex-1">Record payment</Button>
+              <Button type="button" variant="secondary" onClick={() => setPayOpen(null)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">Record payment</Button>
             </div>
-          </>
+          </form>
         )}
       </Modal>
     </div>

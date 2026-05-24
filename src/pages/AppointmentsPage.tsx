@@ -232,7 +232,7 @@ export function AppointmentsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); create(); }} className="space-y-3">
           <Select
             label="Patient"
             value={form.patientId}
@@ -252,16 +252,16 @@ export function AppointmentsPage() {
           </div>
           <Input label="Reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
           <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        </div>
-        <div className="mt-3 sm:mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
-          <Button onClick={create} className="flex-1">Book</Button>
-        </div>
+          <div className="mt-3 sm:mt-4 flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Book</Button>
+          </div>
+        </form>
       </Modal>
 
       <Modal open={!!showReschedule} onClose={() => setShowReschedule(null)} title="Reschedule appointment">
         {error && <Alert message={error} />}
-        <div className="space-y-3">
+        <form onSubmit={(e) => { e.preventDefault(); reschedule(); }} className="space-y-3">
           <Input
             label="New date"
             type="date"
@@ -282,17 +282,17 @@ export function AppointmentsPage() {
               onChange={(e) => setRescheduleForm({ ...rescheduleForm, newEndTime: e.target.value })}
             />
           </div>
-        </div>
-        <div className="mt-3 sm:mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => setShowReschedule(null)} className="flex-1">Cancel</Button>
-          <Button onClick={reschedule} className="flex-1">Reschedule</Button>
-        </div>
+          <div className="mt-3 sm:mt-4 flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowReschedule(null)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Reschedule</Button>
+          </div>
+        </form>
       </Modal>
 
       <Modal open={!!showEdit} onClose={() => setShowEdit(null)} title="Edit appointment">
         {error && <Alert message={error} />}
         {showEdit && (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); edit(); }}>
             <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
               <div>
                 <span className="font-medium text-slate-700">Patient:</span> {showEdit.patientName}
@@ -322,17 +322,17 @@ export function AppointmentsPage() {
               />
             </div>
             <div className="mt-3 sm:mt-4 flex gap-2">
-              <Button variant="secondary" onClick={() => setShowEdit(null)} className="flex-1">Cancel</Button>
-              <Button onClick={edit} className="flex-1">Save</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowEdit(null)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">Save</Button>
             </div>
-          </>
+          </form>
         )}
       </Modal>
 
       <Modal open={!!showCancel} onClose={() => setShowCancel(null)} title="Cancel appointment">
         {error && <Alert message={error} />}
         {showCancel && (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); cancel(); }}>
             <div className="mb-4 space-y-2 pb-4 border-b text-sm">
               <div>
                 <span className="font-medium text-slate-700">Patient:</span> {showCancel.patientName}
@@ -346,17 +346,17 @@ export function AppointmentsPage() {
             </div>
             <p className="text-slate-600 mb-6">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
             <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => setShowCancel(null)} className="flex-1">No, keep it</Button>
-              <Button variant="danger" onClick={cancel} className="flex-1">Yes, cancel appointment</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowCancel(null)} className="flex-1">No, keep it</Button>
+              <Button type="submit" variant="danger" className="flex-1">Yes, cancel appointment</Button>
             </div>
-          </>
+          </form>
         )}
       </Modal>
 
       <Modal open={!!showComplete} onClose={() => setShowComplete(null)} title="Complete appointment">
         {error && <Alert message={error} />}
         {showComplete && (
-          <>
+          <form onSubmit={(e) => { e.preventDefault(); complete(); }}>
             <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
               <div>
                 <span className="font-medium text-slate-700">Patient:</span> {showComplete.patientName}
@@ -377,10 +377,10 @@ export function AppointmentsPage() {
               placeholder="Enter completion notes..."
             />
             <div className="mt-3 sm:mt-4 flex gap-2">
-              <Button variant="secondary" onClick={() => setShowComplete(null)} className="flex-1">Cancel</Button>
-              <Button onClick={complete} className="flex-1">Complete Appointment</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowComplete(null)} className="flex-1">Cancel</Button>
+              <Button type="submit" className="flex-1">Complete Appointment</Button>
             </div>
-          </>
+          </form>
         )}
       </Modal>
     </div>

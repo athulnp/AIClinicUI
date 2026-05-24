@@ -224,7 +224,7 @@ export function DoctorsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 sm:space-y-4">
           {modal === 'create' && (
             <>
               <p className="text-sm text-[#707881] mb-2">Create doctor account and profile</p>
@@ -309,11 +309,11 @@ export function DoctorsPage() {
             />
             <span className="font-medium text-[#191c1d]">Available for appointments</span>
           </label>
-        </div>
-        <div className="mt-3 sm:mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-          <Button onClick={save} className="flex-1">Save</Button>
-        </div>
+          <div className="mt-3 sm:mt-4 flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Save</Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

@@ -192,7 +192,7 @@ export function UsersPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 sm:space-y-4">
           <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
             <Input label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} disabled={modal === 'edit'} />
             {modal === 'create' && (
@@ -207,11 +207,11 @@ export function UsersPage() {
             <Input label="Phone" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} />
             <Select label="Role" value={String(form.roleId)} onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })} options={roleOptions} />
           </div>
-        </div>
-        <div className="mt-3 sm:mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-          <Button onClick={save} className="flex-1">{modal === 'create' ? 'Create' : 'Save changes'}</Button>
-        </div>
+          <div className="mt-3 sm:mt-4 flex gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">{modal === 'create' ? 'Create' : 'Save changes'}</Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

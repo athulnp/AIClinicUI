@@ -205,7 +205,7 @@ export function PatientsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="grid gap-3 sm:grid-cols-2">
           <Input label="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
           <Select label="Gender" value={form.gender} onChange={(e) => setForm({ ...form, gender: Number(e.target.value) as Gender })} options={Object.entries(genderLabels).map(([k, v]) => ({ value: k, label: v }))} />
           <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
@@ -213,13 +213,15 @@ export function PatientsPage() {
           <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           <Input label="Blood group" value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })} />
           <Input label="Emergency contact" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
-        </div>
-        <Input label="Address" className="mt-3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-        <Input label="Allergies" className="mt-3" value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} />
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
-          <Button onClick={save}>Save</Button>
-        </div>
+        </form>
+        <form onSubmit={(e) => { e.preventDefault(); save(); }}>
+          <Input label="Address" className="mt-3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+          <Input label="Allergies" className="mt-3" value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} />
+          <div className="mt-4 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
+            <Button type="submit">Save</Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

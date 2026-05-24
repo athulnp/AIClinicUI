@@ -104,7 +104,7 @@ export function DoctorDetailPage() {
             <p className="text-sm text-[#404850]">{editMode ? 'Update doctor information below' : 'View and manage doctor details'}</p>
           </div>
           {editMode ? (
-            <div className="space-y-3 sm:space-y-4">
+            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
               <Input
                 label="Specialization"
                 value={form.specialization}
@@ -149,14 +149,14 @@ export function DoctorDetailPage() {
                 <span className="font-medium text-[#191c1d]">Available</span>
               </label>
               <div className="flex gap-2 pt-4">
-                <Button onClick={handleUpdate} className="flex-1">
+                <Button type="submit" className="flex-1">
                   Save Changes
                 </Button>
-                <Button onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
+                <Button type="button" onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
                   Cancel
                 </Button>
               </div>
-            </div>
+            </form>
           ) : (
             <div className="space-y-3 sm:space-y-4">
               <div>

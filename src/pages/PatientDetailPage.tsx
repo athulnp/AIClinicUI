@@ -118,7 +118,7 @@ export function PatientDetailPage() {
         </div>
 
         {editMode && (
-          <div className="space-y-3 p-5">
+          <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 p-5">
             <Input
               label="Full name"
               value={form.fullName}
@@ -165,10 +165,10 @@ export function PatientDetailPage() {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
             <div className="flex gap-2 pt-4">
-              <Button onClick={save}>Save changes</Button>
-              <Button variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
+              <Button type="submit">Save changes</Button>
+              <Button type="button" variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
             </div>
-          </div>
+          </form>
         )}
       </Card>
 

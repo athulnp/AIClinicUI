@@ -230,7 +230,7 @@ export function AppointmentDetailPage() {
                       <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="font-medium">{doctor.userId}</span>
+                      <span className="font-medium">{doctor.fullName}</span>
                     </div>
                     {doctor.specialization && (
                       <div className="flex items-center gap-2 text-slate-600">
@@ -363,13 +363,13 @@ export function AppointmentDetailPage() {
 
       <Modal open={showCancel} onClose={() => setShowCancel(false)} title="Cancel appointment">
         {error && <Alert message={error} />}
-        <div className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleCancel(); }} className="space-y-4">
           <div className="space-y-2 pb-4 border-b text-sm">
             <div>
               <span className="font-medium text-slate-700">Patient:</span> {patient?.fullName}
             </div>
             <div>
-              <span className="font-medium text-slate-700">Doctor:</span> {doctor?.userId}
+              <span className="font-medium text-slate-700">Doctor:</span> {doctor?.fullName}
             </div>
             <div>
               <span className="font-medium text-slate-700">Date:</span> {formatDate(appointment.appointmentDate)} at {formatTime(appointment.startTime)}
@@ -377,15 +377,15 @@ export function AppointmentDetailPage() {
           </div>
           <p className="text-slate-600">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setShowCancel(false)} className="flex-1">No, keep it</Button>
-            <Button variant="danger" onClick={handleCancel} className="flex-1">Yes, cancel appointment</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowCancel(false)} className="flex-1">No, keep it</Button>
+            <Button type="submit" variant="danger" className="flex-1">Yes, cancel appointment</Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <Modal open={showAddNote} onClose={() => setShowAddNote(false)} title="Add note">
         {error && <Alert message={error} />}
-        <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleAddNote(); }} className="space-y-3 sm:space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">Note Type</label>
             <select
@@ -406,15 +406,15 @@ export function AppointmentDetailPage() {
             placeholder="Enter note content..."
           />
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setShowAddNote(false)} className="flex-1">Cancel</Button>
-            <Button onClick={handleAddNote} className="flex-1">Add Note</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowAddNote(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Add Note</Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <Modal open={showComplete} onClose={() => setShowComplete(false)} title="Complete appointment">
         {error && <Alert message={error} />}
-        <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); handleComplete(); }} className="space-y-3 sm:space-y-4">
           <p className="text-slate-600">Add any notes before completing this appointment (optional).</p>
           <Input
             label="Notes"
@@ -424,10 +424,10 @@ export function AppointmentDetailPage() {
             placeholder="Enter completion notes..."
           />
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setShowComplete(false)} className="flex-1">Cancel</Button>
-            <Button onClick={handleComplete} className="flex-1">Complete Appointment</Button>
+            <Button type="button" variant="secondary" onClick={() => setShowComplete(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">Complete Appointment</Button>
           </div>
-        </div>
+        </form>
       </Modal>
     </div>
   );
