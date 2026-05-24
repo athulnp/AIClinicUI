@@ -55,14 +55,24 @@ export function AppointmentsPage() {
     if (needsClinicContext) return;
     setLoading(true);
     try {
+      console.log('Starting to load appointments...');
       const [a, p, d] = await Promise.all([
         appointmentsApi.list({ pageNumber: 1, pageSize: 20 }),
         patientsApi.list({ pageNumber: 1, pageSize: 100 }),
         doctorsApi.list(),
       ]);
+      console.log('API response - Appointments:', a);
+      console.log('API response - Patients:', p);
+      console.log('API response - Doctors:', d);
+      console.log('Appointments data length:', a.data?.length);
+      console.log('Appointments data:', a.data);
       setItems(a.data);
       setPatients(p.data);
       setDoctors(d);
+      console.log('State updated - items length:', a.data?.length);
+    } catch (err) {
+      console.error('Error loading appointments:', err);
+      setError(err instanceof ApiError ? err.message : 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -173,6 +183,7 @@ export function AppointmentsPage() {
 
   return (
     <div>
+      {error && <Alert message={error} />}
       <Card>
         <CardHeader title="Appointments" action={<Button onClick={() => setShowCreate(true)}>Book appointment</Button>} />
         <div className="overflow-x-auto">
