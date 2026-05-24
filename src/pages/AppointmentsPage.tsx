@@ -63,6 +63,9 @@ export function AppointmentsPage() {
       setItems(a.data);
       setPatients(p.data);
       setDoctors(d);
+    } catch (err) {
+      console.error('Error loading appointments:', err);
+      setError(err instanceof ApiError ? err.message : 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
@@ -173,6 +176,7 @@ export function AppointmentsPage() {
 
   return (
     <div>
+      {error && <Alert message={error} />}
       <Card>
         <CardHeader title="Appointments" action={<Button onClick={() => setShowCreate(true)}>Book appointment</Button>} />
         <div className="overflow-x-auto">
