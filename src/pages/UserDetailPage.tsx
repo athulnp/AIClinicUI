@@ -4,7 +4,7 @@ import { ApiError } from '../api/client';
 import { usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { type User } from '../types';
-import { Alert, Badge, Button, Card, CardHeader, Input, PageLoader, Select } from '../components/ui';
+import { Alert, Badge, Button, Card, Input, PageLoader, Select } from '../components/ui';
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -81,24 +81,27 @@ export function UserDetailPage() {
   const canEdit = currentUser?.roleName === 'SuperAdmin' || Number(id) === currentUser?.id;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">{user.fullName}</h1>
-          <p className="mt-1 text-slate-500">@{user.username}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{user.fullName}</h1>
+          <p className="mt-1 text-[#404850]">@{user.username}</p>
         </div>
-        <button onClick={() => navigate('/users')} className="text-slate-600 hover:text-slate-900">
+        <button onClick={() => navigate('/users')} className="px-4 py-2 rounded-lg border border-[#e1e3e4] bg-white hover:bg-[#f8f9fa] transition-colors text-[#404850] text-sm font-medium">
           ← Back
         </button>
       </div>
 
       {error && <Alert message={error} />}
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader title={editMode ? 'Edit User' : 'User Details'} />
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit User' : 'User Details'}</h2>
+            <p className="text-sm text-[#404850]">{editMode ? 'Update user information below' : 'View and manage user details'}</p>
+          </div>
           {editMode ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <Input
                 label="Full Name"
                 value={form.fullName}
@@ -136,25 +139,25 @@ export function UserDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Username</label>
-                <p className="mt-1 text-slate-900">{user.username}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Username</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{user.username}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Email</label>
-                <p className="mt-1 text-slate-900">{user.email}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Email</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{user.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Phone Number</label>
-                <p className="mt-1 text-slate-900">{user.phoneNumber}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Phone Number</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{user.phoneNumber}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Role</label>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Role</label>
                 <Badge tone="default">{user.roleName}</Badge>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Status</label>
                 <Badge tone={user.isActive ? 'success' : 'danger'}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </Badge>
@@ -168,13 +171,16 @@ export function UserDetailPage() {
           )}
         </Card>
 
-        <Card>
-          <CardHeader title="Actions" />
+        <Card className="p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+            <p className="text-sm text-[#404850]">Quick actions for this user</p>
+          </div>
           <div className="space-y-3">
             {!editMode && canEdit && user.isActive && (
               <>
                 <Button onClick={() => setEditMode(true)} className="w-full">
-                  Edit
+                  Edit User
                 </Button>
                 <Button onClick={handleDeactivate} className="w-full" variant="danger">
                   Deactivate User

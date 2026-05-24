@@ -115,6 +115,7 @@ export interface Appointment {
   endTime: string;
   status: AppointmentStatus;
   reason?: string;
+  description?: string;
   notes?: string;
   createdAt: string;
 }
@@ -164,6 +165,7 @@ export interface CreateAppointmentRequest {
   startTime: string;
   endTime: string;
   reason?: string;
+  description?: string;
   notes?: string;
 }
 
@@ -211,4 +213,23 @@ export interface UpdateDoctorRequest {
   department?: string;
   bio?: string;
   isAvailable?: boolean;
+}
+
+export interface AppointmentNote {
+  id: number;
+  appointmentId: number;
+  content: string;
+  noteType?: string;
+  createdByUser: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface CreateAppointmentNoteRequest {
+  content: string;
+  noteType?: string;
+}
+
+export interface UpdateAppointmentNoteRequest {
+  content: string;
 }

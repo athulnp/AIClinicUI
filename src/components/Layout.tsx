@@ -63,56 +63,40 @@ export function Layout() {
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-80 flex-col bg-white border-r border-[#bfc7d1]/30 shadow-[0_4px_20px_rgba(0,0,0,0.05)] transition-transform duration-300 lg:w-72 lg:static lg:transform-none ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="flex items-center justify-between px-6 py-6 border-b border-[#e1e3e4]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#707881]">AI Dental OS</p>
-            <h1 className="text-xl font-bold text-[#005d90] mt-1">Clinic Portal</h1>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs flex flex-col bg-gradient-to-b from-white to-[#f8f9fa] border-r border-[#e1e3e4] shadow-2xl transition-transform duration-300 lg:w-72 lg:static lg:transform-none lg:max-w-none ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6 border-b border-[#e1e3e4] bg-white/50 backdrop-blur-sm">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#005d90] to-[#006878] flex items-center justify-center">
+                <Stethoscope size={16} className="text-white" />
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#005d90] hidden sm:block">AI Dental OS</p>
+            </div>
+            <h1 className="text-lg sm:text-xl font-bold text-[#191c1d] mt-1 sm:mt-2">Clinic Portal</h1>
             {user?.clinicName && (
-              <p className="mt-2 text-sm text-[#404850] truncate">{user.clinicName}</p>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-[#404850] truncate font-medium">{user.clinicName}</p>
             )}
           </div>
           <button
-            className="lg:hidden rounded-lg p-2 hover:bg-[#f3f4f5] transition-colors text-[#707881]"
+            className="rounded-lg p-2 hover:bg-[#f3f4f5] transition-colors text-[#707881]"
             onClick={() => setMobileMenuOpen(false)}
           >
             <X size={20} />
           </button>
         </div>
 
-        {isSuperAdmin && (
-          <div className="px-6 py-4 border-b border-[#e1e3e4]">
-            <label className="block text-sm">
-              <span className="mb-2 block font-semibold text-[#191c1d]">Active clinic</span>
-              <select
-                className="w-full rounded-lg border border-[#bfc7d1] bg-white px-4 py-2.5 text-sm text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all"
-                value={selectedClinicId ?? ''}
-                onChange={(e) =>
-                  setSelectedClinicId(e.target.value ? Number(e.target.value) : null)
-                }
-              >
-                <option value="">— Select clinic —</option>
-                {clinics.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.code})
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-
-        <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+        <nav className="flex-1 space-y-1 p-3 sm:p-4 overflow-y-auto">
+          <p className="px-3 sm:px-4 py-2 text-xs font-semibold uppercase tracking-wider text-[#707881] hidden sm:block">Main Menu</p>
           {nav.filter(canSee).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                `flex items-center gap-3 rounded-lg px-3 sm:px-4 py-3 text-sm font-medium transition-all duration-200 ${
                   isActive 
-                    ? 'bg-[#005d90] text-white shadow-md' 
-                    : 'text-[#404850] hover:bg-[#f3f4f5] hover:text-[#005d90]'
+                    ? 'bg-gradient-to-r from-[#005d90] to-[#006878] text-white shadow-lg shadow-[#005d90]/20' 
+                    : 'text-[#404850] hover:bg-white hover:text-[#005d90] hover:shadow-md'
                 }`
               }
               onClick={() => setMobileMenuOpen(false)}
@@ -123,36 +107,65 @@ export function Layout() {
           ))}
         </nav>
 
-        <div className="border-t border-[#e1e3e4] p-4">
-          <div className="flex items-center gap-3 mb-4 px-2">
-            <div className="h-10 w-10 rounded-full bg-[#f3f4f5] flex items-center justify-center">
-              <UserCircle size={20} className="text-[#707881]" />
+        <div className="border-t border-[#e1e3e4] bg-white/50 backdrop-blur-sm">
+          {isSuperAdmin && (
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-[#e1e3e4]">
+              <label className="block text-sm">
+                <span className="mb-2 flex items-center gap-2 font-semibold text-[#191c1d] text-xs sm:text-sm">
+                  <Building2 size={14} className="text-[#005d90]" />
+                  <span className="hidden sm:inline">Active Clinic</span>
+                  <span className="sm:hidden">Clinic</span>
+                </span>
+                <select
+                  className="w-full rounded-lg border border-[#bfc7d1] bg-white px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all shadow-sm"
+                  value={selectedClinicId ?? ''}
+                  onChange={(e) =>
+                    setSelectedClinicId(e.target.value ? Number(e.target.value) : null)
+                  }
+                >
+                  <option value="">— Select —</option>
+                  {clinics.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.code})
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#191c1d] truncate">{user?.fullName}</p>
-              <p className="text-xs text-[#404850] truncate">{user?.username}</p>
+          )}
+
+          <div className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 px-2 p-2 sm:p-3 rounded-lg bg-gradient-to-r from-[#f8f9fa] to-white border border-[#e1e3e4]">
+              <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-gradient-to-br from-[#005d90] to-[#006878] flex items-center justify-center shadow-md flex-shrink-0">
+                <UserCircle size={18} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs sm:text-sm font-semibold text-[#191c1d] truncate">{user?.fullName}</p>
+                <p className="text-xs text-[#404850] truncate hidden sm:block">{user?.roleName}</p>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              className="flex-1"
-              onClick={() => {
-                setMobileMenuOpen(false);
-                navigate('/profile');
-              }}
-            >
-              Profile
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => logout().then(() => {
-                setMobileMenuOpen(false);
-                navigate('/login');
-              })}
-            >
-              <LogOut size={18} />
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                className="flex-1 text-xs hover:bg-[#f3f4f5]"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate('/profile');
+                }}
+              >
+                Profile
+              </Button>
+              <Button
+                variant="ghost"
+                className="hover:bg-[#f3f4f5] hover:text-[#ba1a1a]"
+                onClick={() => logout().then(() => {
+                  setMobileMenuOpen(false);
+                  navigate('/login');
+                })}
+              >
+                <LogOut size={18} />
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
