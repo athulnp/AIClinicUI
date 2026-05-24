@@ -77,106 +77,138 @@ export function PatientDetailPage() {
   if (loading || !patient) return <PageLoader />;
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <Button variant="secondary" onClick={() => navigate('/patients')}>← Back</Button>
-
-      <Card>
-        <CardHeader
-          title={patient.fullName}
-          action={editMode ? null : <Button onClick={() => setEditMode(true)}>Edit</Button>}
-        />
-        {error && <Alert message={error} />}
-
-        <div className="grid grid-cols-2 gap-6 border-b border-slate-100 p-5">
-          <div>
-            <p className="text-xs font-medium text-slate-500">Patient Code</p>
-            <p className="mt-1 text-sm font-medium">{patient.patientCode}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Gender</p>
-            <p className="mt-1 text-sm font-medium">{['', 'Male', 'Female', 'Other'][patient.gender]}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Date of Birth</p>
-            <p className="mt-1 text-sm font-medium">{formatDate(patient.dateOfBirth)}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Blood Group</p>
-            <p className="mt-1 text-sm font-medium">{patient.bloodGroup || '—'}</p>
-          </div>
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{patient.fullName}</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-[#404850]">{patient.patientCode}</p>
         </div>
+        <Button variant="secondary" onClick={() => navigate('/patients')} className="w-full sm:w-auto">
+          ← Back
+        </Button>
+      </div>
 
-        <div className="grid grid-cols-2 gap-6 border-b border-slate-100 p-5">
-          <div>
-            <p className="text-xs font-medium text-slate-500">Phone</p>
-            <p className="mt-1 text-sm">{patient.phoneNumber}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500">Email</p>
-            <p className="mt-1 text-sm">{patient.email || '—'}</p>
-          </div>
-        </div>
+      {error && <Alert message={error} />}
 
-        {editMode && (
-          <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 p-5">
-            <Input
-              label="Full name"
-              value={form.fullName}
-              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-            />
-            <Input
-              label="Phone"
-              value={form.phoneNumber}
-              onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-            />
-            <Input
-              label="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-            <Input
-              label="Address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-            <Input
-              label="Blood group"
-              value={form.bloodGroup}
-              onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
-            />
-            <Input
-              label="Medical history"
-              value={form.medicalHistory}
-              onChange={(e) => setForm({ ...form, medicalHistory: e.target.value })}
-            />
-            <Input
-              label="Allergies"
-              value={form.allergies}
-              onChange={(e) => setForm({ ...form, allergies: e.target.value })}
-            />
-            <Input
-              label="Emergency contact"
-              value={form.emergencyContact}
-              onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
-            />
-            <Input
-              label="Notes"
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            />
-            <div className="flex gap-2 pt-4">
-              <Button type="submit">Save changes</Button>
-              <Button type="button" variant="secondary" onClick={() => setEditMode(false)}>Cancel</Button>
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Patient Information</h2>
+              <p className="mt-1 text-sm text-[#404850]">View and manage patient details</p>
             </div>
-          </form>
-        )}
-      </Card>
 
-      <Card>
+            <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Patient Code</label>
+                <p className="text-[#191c1d] font-medium">{patient.patientCode}</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Gender</label>
+                <p className="text-[#191c1d] font-medium">{['', 'Male', 'Female', 'Other'][patient.gender]}</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Date of Birth</label>
+                <p className="text-[#191c1d] font-medium">{formatDate(patient.dateOfBirth)}</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Blood Group</label>
+                <p className="text-[#191c1d] font-medium">{patient.bloodGroup || '—'}</p>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-4 sm:pt-6 grid gap-4 sm:gap-6 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Phone</label>
+                <p className="text-[#191c1d] font-medium">{patient.phoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Email</label>
+                <p className="text-[#191c1d] font-medium">{patient.email || '—'}</p>
+              </div>
+            </div>
+
+            {editMode && (
+              <form onSubmit={(e) => { e.preventDefault(); save(); }} className="border-t border-slate-100 pt-4 sm:pt-6 space-y-3 sm:space-y-4">
+                <Input
+                  label="Full name"
+                  value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                />
+                <Input
+                  label="Phone"
+                  value={form.phoneNumber}
+                  onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+                />
+                <Input
+                  label="Email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
+                <Input
+                  label="Address"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                />
+                <Input
+                  label="Blood group"
+                  value={form.bloodGroup}
+                  onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })}
+                />
+                <Input
+                  label="Medical history"
+                  value={form.medicalHistory}
+                  onChange={(e) => setForm({ ...form, medicalHistory: e.target.value })}
+                />
+                <Input
+                  label="Allergies"
+                  value={form.allergies}
+                  onChange={(e) => setForm({ ...form, allergies: e.target.value })}
+                />
+                <Input
+                  label="Emergency contact"
+                  value={form.emergencyContact}
+                  onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
+                />
+                <Input
+                  label="Notes"
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" className="flex-1">Save changes</Button>
+                  <Button type="button" variant="secondary" onClick={() => setEditMode(false)} className="flex-1">Cancel</Button>
+                </div>
+              </form>
+            )}
+
+            {!editMode && (
+              <Button onClick={() => setEditMode(true)} className="w-full">
+                Edit Patient
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4">
+            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Quick Actions</h2>
+            <div className="space-y-3">
+              {!editMode && (
+                <Button onClick={() => setEditMode(true)} className="w-full">
+                  Edit Patient
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
         <CardHeader title="Appointments" />
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
                 <th className="px-5 py-3">Date</th>
                 <th className="px-5 py-3">Time</th>

@@ -4,7 +4,7 @@ import { ApiError } from '../api/client';
 import { clinicsApi } from '../api/services';
 import { type Clinic } from '../types';
 import { formatDate } from '../utils/labels';
-import { Alert, Badge, Button, Card, CardHeader, Input, PageLoader } from '../components/ui';
+import { Alert, Badge, Button, Card, Input, PageLoader } from '../components/ui';
 
 export function ClinicDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -66,24 +66,28 @@ export function ClinicDetailPage() {
   if (!clinic) return <div className="text-center text-slate-500">Clinic not found</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">{clinic.name}</h1>
-          <p className="mt-1 text-slate-500">Code: {clinic.code}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{clinic.name}</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-[#404850]">Code: {clinic.code}</p>
         </div>
-        <button onClick={() => navigate('/clinics')} className="text-slate-600 hover:text-slate-900">
+        <Button variant="secondary" onClick={() => navigate('/clinics')} className="w-full sm:w-auto">
           ← Back
-        </button>
+        </Button>
       </div>
 
       {error && <Alert message={error} />}
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader title={editMode ? 'Edit Clinic' : 'Clinic Details'} />
-          {editMode ? (
-            <div className="space-y-4">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit Clinic' : 'Clinic Details'}</h2>
+              <p className="text-sm text-[#404850]">{editMode ? 'Update clinic information below' : 'View and manage clinic details'}</p>
+            </div>
+            {editMode ? (
+            <div className="space-y-3 sm:space-y-4">
               <Input
                 label="Name"
                 value={form.name}
@@ -95,16 +99,18 @@ export function ClinicDetailPage() {
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 disabled
               />
-              <Input
-                label="City"
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-              />
-              <Input
-                label="Country"
-                value={form.country}
-                onChange={(e) => setForm({ ...form, country: e.target.value })}
-              />
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <Input
+                  label="City"
+                  value={form.city}
+                  onChange={(e) => setForm({ ...form, city: e.target.value })}
+                />
+                <Input
+                  label="Country"
+                  value={form.country}
+                  onChange={(e) => setForm({ ...form, country: e.target.value })}
+                />
+              </div>
               <Input
                 label="Email"
                 type="email"
@@ -126,35 +132,35 @@ export function ClinicDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Name</label>
-                <p className="mt-1 text-slate-900">{clinic.name}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Name</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{clinic.name}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Code</label>
-                <p className="mt-1 text-slate-900">{clinic.code}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Code</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{clinic.code}</p>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">City</label>
-                  <p className="mt-1 text-slate-900">{clinic.city}</p>
+                  <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">City</label>
+                  <p className="mt-1 text-[#191c1d] font-medium">{clinic.city}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Country</label>
-                  <p className="mt-1 text-slate-900">{clinic.country}</p>
+                  <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Country</label>
+                  <p className="mt-1 text-[#191c1d] font-medium">{clinic.country}</p>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Email</label>
-                <p className="mt-1 text-slate-900">{clinic.email}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Email</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{clinic.email}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Phone Number</label>
-                <p className="mt-1 text-slate-900">{clinic.phoneNumber}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Phone Number</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{clinic.phoneNumber}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Status</label>
                 <div className="mt-1">
                   <Badge tone={clinic.isActive ? 'success' : 'default'}>
                     {clinic.isActive ? 'Active' : 'Inactive'}
@@ -168,20 +174,26 @@ export function ClinicDetailPage() {
                 </div>
               )}
               <Button onClick={() => setEditMode(true)} className="w-full">
-                Edit
+                Edit Clinic
               </Button>
             </div>
-          )}
+            )}
+          </div>
         </Card>
 
-        <Card>
-          <CardHeader title="Actions" />
-          <div className="space-y-3">
-            {!editMode && (
-              <Button onClick={() => setEditMode(true)} className="w-full">
-                Edit
-              </Button>
-            )}
+        <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+              <p className="text-sm text-[#404850]">Manage this clinic</p>
+            </div>
+            <div className="space-y-3">
+              {!editMode && (
+                <Button onClick={() => setEditMode(true)} className="w-full">
+                  Edit Clinic
+                </Button>
+              )}
+            </div>
           </div>
         </Card>
       </div>

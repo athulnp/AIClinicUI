@@ -5,6 +5,7 @@ import { usersApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { type User } from '../types';
 import { Alert, Badge, Button, Card, Input, PageLoader, Select } from '../components/ui';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean }>({ isOpen: false });
   const [form, setForm] = useState({
     username: '',
     fullName: '',
@@ -63,10 +65,15 @@ export function UserDetailPage() {
 
   const handleDeactivate = async () => {
     if (!id) return;
-    if (!window.confirm('Are you sure you want to deactivate this user?')) return;
+    setConfirmDialog({ isOpen: true });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!id) return;
     setError(null);
     try {
       await usersApi.deactivate(Number(id));
+      setConfirmDialog({ isOpen: false });
       navigate('/users');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -82,25 +89,26 @@ export function UserDetailPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{user.fullName}</h1>
-          <p className="mt-1 text-[#404850]">@{user.username}</p>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-[#404850]">@{user.username}</p>
         </div>
-        <button onClick={() => navigate('/users')} className="px-4 py-2 rounded-lg border border-[#e1e3e4] bg-white hover:bg-[#f8f9fa] transition-colors text-[#404850] text-sm font-medium">
+        <Button variant="secondary" onClick={() => navigate('/users')} className="w-full sm:w-auto">
           ← Back
-        </button>
+        </Button>
       </div>
 
       {error && <Alert message={error} />}
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit User' : 'User Details'}</h2>
-            <p className="text-sm text-[#404850]">{editMode ? 'Update user information below' : 'View and manage user details'}</p>
-          </div>
-          {editMode ? (
+        <Card className="lg:col-span-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit User' : 'User Details'}</h2>
+              <p className="text-sm text-[#404850]">{editMode ? 'Update user information below' : 'View and manage user details'}</p>
+            </div>
+            {editMode ? (
             <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
               <Input
                 label="Full Name"
@@ -168,28 +176,42 @@ export function UserDetailPage() {
                 </Button>
               )}
             </div>
-          )}
-        </Card>
-
-        <Card className="p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
-            <p className="text-sm text-[#404850]">Quick actions for this user</p>
-          </div>
-          <div className="space-y-3">
-            {!editMode && canEdit && user.isActive && (
-              <>
-                <Button onClick={() => setEditMode(true)} className="w-full">
-                  Edit User
-                </Button>
-                <Button onClick={handleDeactivate} className="w-full" variant="danger">
-                  Deactivate User
-                </Button>
-              </>
             )}
           </div>
         </Card>
+
+        <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+              <p className="text-sm text-[#404850]">Quick actions for this user</p>
+            </div>
+            <div className="space-y-3">
+              {!editMode && canEdit && user.isActive && (
+                <>
+                  <Button onClick={() => setEditMode(true)} className="w-full">
+                    Edit User
+                  </Button>
+                  <Button onClick={handleDeactivate} className="w-full" variant="danger">
+                    Deactivate User
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false })}
+        onConfirm={handleConfirmDeactivate}
+        title="Deactivate User"
+        message="Are you sure you want to deactivate this user? They will no longer be able to access the system."
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

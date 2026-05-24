@@ -12,12 +12,17 @@ import {
   Modal,
   PageLoader,
 } from '../components/ui';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function ClinicsPage() {
   const [items, setItems] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; clinicId: number | null }>({
+    isOpen: false,
+    clinicId: null,
+  });
   const [form, setForm] = useState({ code: '', name: '', city: '', email: '', phoneNumber: '' });
 
   const load = async () => {
@@ -71,9 +76,14 @@ export function ClinicsPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this clinic? This will affect all associated data.')) return;
+    setConfirmDialog({ isOpen: true, clinicId: id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.clinicId) return;
     try {
-      await clinicsApi.delete(id);
+      await clinicsApi.delete(confirmDialog.clinicId);
+      setConfirmDialog({ isOpen: false, clinicId: null });
       load();
     } catch (e) {
       alert('Delete failed');
@@ -132,6 +142,17 @@ export function ClinicsPage() {
           <Button onClick={modal === 'create' ? create : update}>{modal === 'create' ? 'Create clinic' : 'Save changes'}</Button>
         </div>
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, clinicId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Clinic"
+        message="Are you sure you want to delete this clinic? This will affect all associated data including users, patients, and appointments. This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

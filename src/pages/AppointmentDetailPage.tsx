@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { AppointmentStatus, type Appointment, type AppointmentNote, type Doctor, type Patient } from '../types';
 import { appointmentStatusLabels, formatDate, formatTime } from '../utils/labels';
 import { Alert, Badge, Button, Card, EmptyState, Input, Modal, PageLoader } from '../components/ui';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function AppointmentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,10 @@ export function AppointmentDetailPage() {
   const [showAddNote, setShowAddNote] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; noteId: number | null }>({
+    isOpen: false,
+    noteId: null,
+  });
   const [form, setForm] = useState({
     newAppointmentDate: '',
     newStartTime: '09:00',
@@ -75,11 +80,15 @@ export function AppointmentDetailPage() {
   };
 
   const handleDeleteNote = async (noteId: number) => {
-    if (!id) return;
-    if (!confirm('Delete this note?')) return;
+    setConfirmDialog({ isOpen: true, noteId });
+  };
+
+  const handleConfirmDeleteNote = async () => {
+    if (!id || !confirmDialog.noteId) return;
     setError(null);
     try {
-      await appointmentsApi.deleteNote(Number(id), noteId);
+      await appointmentsApi.deleteNote(Number(id), confirmDialog.noteId);
+      setConfirmDialog({ isOpen: false, noteId: null });
       await load();
     } catch (err) {
       if (err instanceof ApiError) {
@@ -157,36 +166,36 @@ export function AppointmentDetailPage() {
   const doctor = doctors.find((d) => d.id === appointment.doctorId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Appointment Details</h1>
-          <p className="mt-1 text-slate-500">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">Appointment Details</h1>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-[#404850]">
             #{appointment.id} • {formatDate(appointment.appointmentDate)} at {formatTime(appointment.startTime)}
           </p>
         </div>
-        <Button variant="secondary" onClick={() => navigate('/appointments')}>
-          ← Back to Appointments
+        <Button variant="secondary" onClick={() => navigate('/appointments')} className="w-full sm:w-auto">
+          ← Back
         </Button>
       </div>
 
       {error && <Alert message={error} />}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <div className="p-6 space-y-6">
-              <div className="flex items-start justify-between">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">Appointment Information</h2>
-                  <p className="mt-1 text-slate-500">Key details about this appointment</p>
+                  <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Appointment Information</h2>
+                  <p className="mt-1 text-sm text-[#404850]">Key details about this appointment</p>
                 </div>
                 <Badge tone={statusTone(appointment.status)}>
                   {appointmentStatusLabels[appointment.status]}
                 </Badge>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-500 uppercase tracking-wide">Date & Time</label>
                   <div className="flex items-center gap-2 text-slate-900">
@@ -263,11 +272,11 @@ export function AppointmentDetailPage() {
             </div>
           </Card>
 
-          <Card>
-            <div className="p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-slate-900">Notes</h2>
-                <Button onClick={() => setShowAddNote(true)} variant="primary" className="text-sm">
+          <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Notes</h2>
+                <Button onClick={() => setShowAddNote(true)} className="w-full sm:w-auto text-sm">
                   + Add Note
                 </Button>
               </div>
@@ -303,10 +312,13 @@ export function AppointmentDetailPage() {
           </Card>
         </div>
 
-        <div className="space-y-6">
-          <Card>
-            <div className="p-6 space-y-4">
-              <h2 className="text-lg font-semibold text-slate-900">Actions</h2>
+        <div className="space-y-4 sm:space-y-6">
+          <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+            <div className="p-4 sm:p-6 space-y-4">
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+                <p className="text-sm text-[#404850]">Manage this appointment</p>
+              </div>
               <div className="space-y-3">
                 {appointment.status === AppointmentStatus.Scheduled && (
                   <>
@@ -326,9 +338,9 @@ export function AppointmentDetailPage() {
           </Card>
 
           {rescheduleMode && (
-            <Card>
-              <div className="p-6 space-y-4">
-                <h2 className="text-lg font-semibold text-slate-900">Reschedule Appointment</h2>
+            <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+              <div className="p-4 sm:p-6 space-y-4">
+                <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Reschedule Appointment</h2>
                 <div className="space-y-4">
                   <Input
                     label="New Date"
@@ -429,6 +441,17 @@ export function AppointmentDetailPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, noteId: null })}
+        onConfirm={handleConfirmDeleteNote}
+        title="Delete Note"
+        message="Are you sure you want to delete this note? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

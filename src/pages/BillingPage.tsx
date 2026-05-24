@@ -16,6 +16,8 @@ import {
   PageLoader,
   Select,
 } from '../components/ui';
+import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function BillingPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -24,10 +26,22 @@ export function BillingPage() {
   const [outstanding, setOutstanding] = useState<Billing[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const { searchQuery, setSearchQuery, filteredItems: allFiltered } = useDebouncedSearch(
+    items,
+    ['invoiceNumber' as keyof Billing, 'patientName' as keyof Billing]
+  );
+  const { filteredItems: outstandingFiltered } = useDebouncedSearch(
+    outstanding,
+    ['invoiceNumber' as keyof Billing, 'patientName' as keyof Billing]
+  );
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [payOpen, setPayOpen] = useState<Billing | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; billingId: number | null }>({
+    isOpen: false,
+    billingId: null,
+  });
   const [form, setForm] = useState<{ patientId: string; totalAmount: string; paymentMethod: PaymentMethod; notes: string }>({
     patientId: '',
     totalAmount: '',
@@ -106,12 +120,17 @@ export function BillingPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this invoice?')) return;
+    setConfirmDialog({ isOpen: true, billingId: id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.billingId) return;
     try {
-      await billingApi.delete(id);
+      await billingApi.delete(confirmDialog.billingId);
+      setConfirmDialog({ isOpen: false, billingId: null });
       load();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Delete failed');
+      setError(e instanceof ApiError ? e.message : 'Delete failed');
     }
   };
 
@@ -138,8 +157,6 @@ export function BillingPage() {
   if (needsClinicContext) return <EmptyState message="Select a clinic for billing." />;
   if (loading) return <PageLoader />;
 
-  const displayItems = tab === 'outstanding' ? outstanding : items;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
@@ -160,6 +177,13 @@ export function BillingPage() {
       <Card>
         <CardHeader title="Invoices" action={<Button onClick={() => { setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' }); setModal('create'); }}>New invoice</Button>} />
         <div className="border-b border-slate-100 px-5 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <SearchFilter
+              placeholder="Search by invoice or patient name..."
+              onSearch={setSearchQuery}
+              className="w-full sm:max-w-md"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => setTab('all')}
@@ -189,7 +213,7 @@ export function BillingPage() {
               </tr>
             </thead>
             <tbody>
-              {displayItems.map((b) => (
+              {(tab === 'outstanding' ? outstandingFiltered : allFiltered).map((b) => (
                 <tr key={b.id} className="border-t border-slate-100">
                   <td className="px-5 py-3 font-mono text-xs">{b.invoiceNumber}</td>
                   <td className="px-5 py-3">{b.patientName}</td>
@@ -214,7 +238,14 @@ export function BillingPage() {
               ))}
             </tbody>
           </table>
-          {displayItems.length === 0 && <EmptyState message={tab === 'outstanding' ? 'No outstanding invoices.' : 'No billing records.'} />}
+          {(tab === 'outstanding' ? outstandingFiltered : allFiltered).length === 0 && (
+            <EmptyState 
+              message={searchQuery 
+                ? `No invoices found matching "${searchQuery}".` 
+                : (tab === 'outstanding' ? 'No outstanding invoices.' : 'No billing records.')
+              } 
+            />
+          )}
         </div>
       </Card>
 
@@ -277,6 +308,17 @@ export function BillingPage() {
           </form>
         )}
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, billingId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Invoice"
+        message="Are you sure you want to delete this invoice? This action cannot be undone and will remove all associated payment records."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

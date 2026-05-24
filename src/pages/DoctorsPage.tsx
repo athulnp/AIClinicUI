@@ -14,13 +14,23 @@ import {
   Modal,
   PageLoader,
 } from '../components/ui';
+import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function DoctorsPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const { searchQuery, setSearchQuery, filteredItems } = useDebouncedSearch(
+    items,
+    ['fullName' as keyof Doctor, 'specialization' as keyof Doctor]
+  );
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; doctorId: number | null }>({
+    isOpen: false,
+    doctorId: null,
+  });
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     // User fields
@@ -147,12 +157,17 @@ export function DoctorsPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this doctor profile?')) return;
+    setConfirmDialog({ isOpen: true, doctorId: id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.doctorId) return;
     try {
-      await doctorsApi.delete(id);
+      await doctorsApi.delete(confirmDialog.doctorId);
+      setConfirmDialog({ isOpen: false, doctorId: null });
       load();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Delete failed');
+      setError(e instanceof ApiError ? e.message : 'Delete failed');
     }
   };
 
@@ -172,9 +187,21 @@ export function DoctorsPage() {
       </Card>
 
       <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
-        <p className="px-4 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm text-[#707881]">
-          Doctors must be created as Doctor users first. Doctor profiles attach medical details.
-        </p>
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-xs sm:text-sm text-[#707881] font-medium">Doctors must be created as Doctor users first. Doctor profiles attach medical details.</p>
+            </div>
+            <SearchFilter
+              placeholder="Search by name or specialization..."
+              onSearch={setSearchQuery}
+              className="w-full sm:max-w-md"
+            />
+          </div>
+          <p className="text-sm text-slate-500 mt-3">
+            {filteredItems.length} doctor{filteredItems.length !== 1 ? 's' : ''} found
+          </p>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
@@ -189,7 +216,7 @@ export function DoctorsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((d) => (
+              {filteredItems.map((d) => (
                 <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-3 sm:px-5 py-3 font-medium text-[#191c1d]">{d.fullName}</td>
                   <td className="px-3 sm:px-5 py-3 text-[#404850]">{d.specialization}</td>
@@ -212,7 +239,11 @@ export function DoctorsPage() {
               ))}
             </tbody>
           </table>
-          {items.length === 0 && <EmptyState message="No doctor profiles." />}
+          {filteredItems.length === 0 && (
+            <EmptyState 
+              message={searchQuery ? `No doctors found matching "${searchQuery}".` : "No doctor profiles."} 
+            />
+          )}
         </div>
       </Card>
 
@@ -315,6 +346,17 @@ export function DoctorsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, doctorId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Doctor"
+        message="Are you sure you want to delete this doctor profile? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

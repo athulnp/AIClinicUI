@@ -16,6 +16,8 @@ import {
   PageLoader,
   Select,
 } from '../components/ui';
+import { SearchFilter } from '../components/SearchFilter';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 const emptyForm: {
   fullName: string;
@@ -54,6 +56,10 @@ export function PatientsPage() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; patientId: number | null }>({
+    isOpen: false,
+    patientId: null,
+  });
 
   const load = useCallback(async () => {
     if (needsClinicContext) return;
@@ -119,9 +125,18 @@ export function PatientsPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this patient?')) return;
-    await patientsApi.delete(id);
-    load();
+    setConfirmDialog({ isOpen: true, patientId: id });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDialog.patientId) return;
+    try {
+      await patientsApi.delete(confirmDialog.patientId);
+      setConfirmDialog({ isOpen: false, patientId: null });
+      load();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Delete failed');
+    }
   };
 
   if (needsClinicContext) return <EmptyState message="Select a clinic to manage patients." />;
@@ -136,16 +151,20 @@ export function PatientsPage() {
             <Button onClick={openCreate}>Add patient</Button>
           }
         />
-        <div className="flex gap-3 border-b border-slate-100 px-5 py-3">
-          <Input
-            placeholder="Search name or phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
-          />
-          <Button variant="secondary" onClick={() => { setPage(1); load(); }}>
-            Search
-          </Button>
+        <div className="border-b border-slate-100 px-5 py-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <SearchFilter
+              placeholder="Search by name or phone..."
+              onSearch={(query) => {
+                setSearch(query);
+                setPage(1);
+              }}
+              className="w-full sm:max-w-md"
+            />
+            <p className="text-sm text-slate-500">
+              {total} total patient{total !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -180,7 +199,11 @@ export function PatientsPage() {
               ))}
             </tbody>
           </table>
-          {items.length === 0 && <EmptyState message="No patients found." />}
+          {items.length === 0 && (
+            <EmptyState 
+              message={search ? `No patients found matching "${search}".` : "No patients found."} 
+            />
+          )}
         </div>
         <div className="flex justify-between items-center px-6 py-4 text-sm text-slate-500 border-t border-slate-100">
           <span className="font-medium">{total} total</span>
@@ -223,6 +246,17 @@ export function PatientsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, patientId: null })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Patient"
+        message="Are you sure you want to delete this patient? This action cannot be undone and will remove all associated appointments and records."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

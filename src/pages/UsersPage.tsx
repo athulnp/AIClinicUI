@@ -15,14 +15,22 @@ import {
   PageLoader,
   Select,
 } from '../components/ui';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { SearchFilter } from '../components/SearchFilter';
 
 export function UsersPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
   const [items, setItems] = useState<User[]>([]);
+  const [filteredItems, setFilteredItems] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; userId: number | null }>({
+    isOpen: false,
+    userId: null,
+  });
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{
     username: string;
@@ -49,15 +57,21 @@ export function UsersPage() {
     roleId: 0,
   };
 
-  const load = async () => {
+  const load = async (search?: string) => {
     if (needsClinicContext) return;
     setLoading(true);
     try {
-      const res = await usersApi.list({ pageNumber: 1, pageSize: 50 });
+      const res = await usersApi.list({ pageNumber: 1, pageSize: 50, search });
       setItems(res.data);
+      setFilteredItems(res.data);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    load(query);
   };
 
   const loadRoles = async () => {
@@ -118,9 +132,14 @@ export function UsersPage() {
   };
 
   const deactivate = async (id: number) => {
-    if (!confirm('Deactivate this user?')) return;
+    setConfirmDialog({ isOpen: true, userId: id });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!confirmDialog.userId) return;
     try {
-      await usersApi.deactivate(id);
+      await usersApi.deactivate(confirmDialog.userId);
+      setConfirmDialog({ isOpen: false, userId: null });
       load();
     } catch (e) {
       alert(e instanceof ApiError ? e.message : 'Deactivation failed');
@@ -147,6 +166,18 @@ export function UsersPage() {
       </Card>
 
       <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <SearchFilter
+              placeholder="Search by name, username, or email..."
+              onSearch={handleSearch}
+              className="w-full sm:max-w-md"
+            />
+            <p className="text-sm text-slate-500">
+              {filteredItems.length} user{filteredItems.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
@@ -160,7 +191,7 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((u) => (
+              {filteredItems.map((u) => (
                 <tr key={u.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-3 sm:px-5 py-3 font-medium text-[#191c1d]">{u.fullName}</td>
                   <td className="px-3 sm:px-5 py-3 text-[#404850]">{u.username}</td>
@@ -180,7 +211,11 @@ export function UsersPage() {
               ))}
             </tbody>
           </table>
-          {items.length === 0 && <EmptyState message="No users." />}
+          {filteredItems.length === 0 && (
+            <EmptyState 
+              message={searchQuery ? `No users found matching "${searchQuery}".` : "No users found."} 
+            />
+          )}
         </div>
       </Card>
 
@@ -213,6 +248,17 @@ export function UsersPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, userId: null })}
+        onConfirm={handleConfirmDeactivate}
+        title="Deactivate User"
+        message="Are you sure you want to deactivate this user? They will no longer be able to access the system."
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

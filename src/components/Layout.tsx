@@ -11,7 +11,6 @@ import {
   Users,
   X,
   Bell,
-  Search,
   Settings,
   AlertCircle,
 } from 'lucide-react';
@@ -182,14 +181,7 @@ export function Layout() {
               >
                 <Menu size={24} />
               </button>
-              <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#707881]" />
-                <input
-                  type="search"
-                  placeholder="Search..."
-                  className="pl-10 pr-4 py-2 w-64 rounded-lg border border-[#bfc7d1] bg-white text-sm outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all lg:w-64"
-                />
-              </div>
+              <h1 className="text-lg font-semibold text-[#191c1d] hidden sm:block">AI Dental OS</h1>
             </div>
             <div className="flex items-center gap-3">
               <button className="rounded-lg p-2 hover:bg-[#f3f4f5] transition-colors relative text-[#707881]">

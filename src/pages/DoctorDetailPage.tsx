@@ -5,6 +5,7 @@ import { doctorsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { type Doctor } from '../types';
 import { Alert, Button, Card, Input, PageLoader } from '../components/ui';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
 
 export function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export function DoctorDetailPage() {
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean }>({ isOpen: false });
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     specialization: '',
@@ -68,10 +70,15 @@ export function DoctorDetailPage() {
 
   const handleDelete = async () => {
     if (!id) return;
-    if (!window.confirm('Are you sure you want to delete this doctor?')) return;
+    setConfirmDialog({ isOpen: true });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!id) return;
     setError(null);
     try {
       await doctorsApi.delete(Number(id));
+      setConfirmDialog({ isOpen: false });
       navigate('/doctors');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -85,25 +92,26 @@ export function DoctorDetailPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{doctor.fullName}</h1>
-          <p className="mt-1 text-[#404850]">{doctor.specialization}</p>
+          <p className="mt-1 sm:mt-2 text-sm sm:text-base text-[#404850]">{doctor.specialization}</p>
         </div>
-        <button onClick={() => navigate('/doctors')} className="px-4 py-2 rounded-lg border border-[#e1e3e4] bg-white hover:bg-[#f8f9fa] transition-colors text-[#404850] text-sm font-medium">
+        <Button variant="secondary" onClick={() => navigate('/doctors')} className="w-full sm:w-auto">
           ← Back
-        </button>
+        </Button>
       </div>
 
       {error && <Alert message={error} />}
 
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit Doctor Details' : 'Doctor Details'}</h2>
-            <p className="text-sm text-[#404850]">{editMode ? 'Update doctor information below' : 'View and manage doctor details'}</p>
-          </div>
-          {editMode ? (
+        <Card className="lg:col-span-2 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit Doctor Details' : 'Doctor Details'}</h2>
+              <p className="text-sm text-[#404850]">{editMode ? 'Update doctor information below' : 'View and manage doctor details'}</p>
+            </div>
+            {editMode ? (
             <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
               <Input
                 label="Specialization"
@@ -190,31 +198,45 @@ export function DoctorDetailPage() {
                 <p className="mt-1 text-[#191c1d] font-medium">{doctor.isAvailable ? 'Available' : 'Unavailable'}</p>
               </div>
               <Button onClick={() => setEditMode(true)} className="w-full">
-                Edit
+                Edit Doctor
               </Button>
             </div>
-          )}
-        </Card>
-
-        <Card className="p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
-          <div className="mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
-            <p className="text-sm text-[#404850]">Quick actions for this doctor</p>
-          </div>
-          <div className="space-y-3">
-            {!editMode && (
-              <>
-                <Button onClick={() => setEditMode(true)} className="w-full">
-                  Edit Doctor
-                </Button>
-                <Button onClick={handleDelete} className="w-full" variant="danger">
-                  Delete Doctor
-                </Button>
-              </>
             )}
           </div>
         </Card>
+
+        <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="p-4 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+              <p className="text-sm text-[#404850]">Quick actions for this doctor</p>
+            </div>
+            <div className="space-y-3">
+              {!editMode && (
+                <>
+                  <Button onClick={() => setEditMode(true)} className="w-full">
+                    Edit Doctor
+                  </Button>
+                  <Button onClick={handleDelete} className="w-full" variant="danger">
+                    Delete Doctor
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
+
+      <ConfirmationDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Doctor"
+        message="Are you sure you want to delete this doctor profile? This action cannot be undone and will remove all associated data."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

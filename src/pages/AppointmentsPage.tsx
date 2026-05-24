@@ -17,6 +17,7 @@ import {
   PageLoader,
   Select,
 } from '../components/ui';
+import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
 
 export function AppointmentsPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -24,6 +25,10 @@ export function AppointmentsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const { searchQuery, setSearchQuery, filteredItems } = useDebouncedSearch(
+    items,
+    ['patientName' as keyof Appointment, 'doctorName' as keyof Appointment, 'reason' as keyof Appointment]
+  );
   const [showCreate, setShowCreate] = useState(false);
   const [showReschedule, setShowReschedule] = useState<Appointment | null>(null);
   const [showEdit, setShowEdit] = useState<Appointment | null>(null);
@@ -179,6 +184,18 @@ export function AppointmentsPage() {
       {error && <Alert message={error} />}
       <Card>
         <CardHeader title="Appointments" action={<Button onClick={() => setShowCreate(true)}>Book appointment</Button>} />
+        <div className="p-4 border-b border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <SearchFilter
+              placeholder="Search by patient, doctor, or reason..."
+              onSearch={setSearchQuery}
+              className="w-full sm:max-w-md"
+            />
+            <p className="text-sm text-slate-500">
+              {filteredItems.length} appointment{filteredItems.length !== 1 ? 's' : ''} found
+            </p>
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
@@ -193,7 +210,7 @@ export function AppointmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {items.map((a) => (
+              {filteredItems.map((a) => (
                 <tr key={a.id} className="border-t border-slate-100">
                   <td className="px-5 py-3">{formatDate(a.appointmentDate)}</td>
                   <td className="px-5 py-3">{formatTime(a.startTime)} – {formatTime(a.endTime)}</td>
@@ -220,7 +237,11 @@ export function AppointmentsPage() {
               ))}
             </tbody>
           </table>
-          {items.length === 0 && <EmptyState message="No appointments." />}
+          {filteredItems.length === 0 && (
+            <EmptyState 
+              message={searchQuery ? `No appointments found matching "${searchQuery}".` : "No appointments."} 
+            />
+          )}
         </div>
       </Card>
 
