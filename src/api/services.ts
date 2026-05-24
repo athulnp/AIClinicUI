@@ -2,6 +2,7 @@ import { apiRequest } from './client';
 import type {
   ApiResponse,
   Appointment,
+  AppointmentNote,
   Billing,
   Clinic,
   Doctor,
@@ -113,8 +114,27 @@ export const appointmentsApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
+  update: (id: number, data: { reason?: string; description?: string; notes?: string }) =>
+    apiRequest<ApiResponse<Appointment>>(`/api/appointments/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
   cancel: (id: number) =>
     apiRequest<ApiResponse<Appointment>>(`/api/appointments/${id}/cancel`, { method: 'PUT' }),
+  notes: (appointmentId: number) =>
+    apiRequest<ApiResponse<AppointmentNote[]>>(`/api/appointments/${appointmentId}/notes`),
+  addNote: (appointmentId: number, data: { content: string; noteType?: string }) =>
+    apiRequest<ApiResponse<AppointmentNote>>(`/api/appointments/${appointmentId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  updateNote: (appointmentId: number, noteId: number, data: { content: string }) =>
+    apiRequest<ApiResponse<AppointmentNote>>(`/api/appointments/${appointmentId}/notes/${noteId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  deleteNote: (appointmentId: number, noteId: number) =>
+    apiRequest<ApiResponse<unknown>>(`/api/appointments/${appointmentId}/notes/${noteId}`, { method: 'DELETE' }),
 };
 
 export const doctorsApi = {
@@ -135,12 +155,6 @@ export const billingApi = {
     return apiRequest<PagedResponse<Billing>>(`/api/billing?${q}`);
   },
   get: (id: number) => apiRequest<Billing>(`/api/billing/${id}`),
-  outstanding: (params: PaginationParams) => {
-    const q = new URLSearchParams();
-    q.set('pageNumber', String(params.pageNumber ?? 1));
-    q.set('pageSize', String(params.pageSize ?? 10));
-    return apiRequest<PagedResponse<unknown>>(`/api/billing/outstanding?${q}`);
-  },
   create: (data: Record<string, unknown>) =>
     apiRequest<ApiResponse<Billing>>('/api/billing', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: number, data: Record<string, unknown>) =>

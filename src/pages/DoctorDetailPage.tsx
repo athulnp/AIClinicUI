@@ -4,7 +4,7 @@ import { ApiError } from '../api/client';
 import { doctorsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { type Doctor } from '../types';
-import { Alert, Button, Card, CardHeader, Input, PageLoader } from '../components/ui';
+import { Alert, Button, Card, Input, PageLoader } from '../components/ui';
 
 export function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -84,24 +84,27 @@ export function DoctorDetailPage() {
   if (!doctor) return <div className="text-center text-slate-500">Doctor not found</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">{doctor.userId}</h1>
-          <p className="mt-1 text-slate-500">{doctor.specialization}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#191c1d]">{doctor.fullName}</h1>
+          <p className="mt-1 text-[#404850]">{doctor.specialization}</p>
         </div>
-        <button onClick={() => navigate('/doctors')} className="text-slate-600 hover:text-slate-900">
+        <button onClick={() => navigate('/doctors')} className="px-4 py-2 rounded-lg border border-[#e1e3e4] bg-white hover:bg-[#f8f9fa] transition-colors text-[#404850] text-sm font-medium">
           ← Back
         </button>
       </div>
 
       {error && <Alert message={error} />}
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader title={editMode ? 'Edit Doctor Details' : 'Doctor Details'} />
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2 p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">{editMode ? 'Edit Doctor Details' : 'Doctor Details'}</h2>
+            <p className="text-sm text-[#404850]">{editMode ? 'Update doctor information below' : 'View and manage doctor details'}</p>
+          </div>
           {editMode ? (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <Input
                 label="Specialization"
                 value={form.specialization}
@@ -112,18 +115,20 @@ export function DoctorDetailPage() {
                 value={form.licenseNumber}
                 onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })}
               />
-              <Input
-                label="Years of Experience"
-                type="number"
-                value={form.yearsOfExperience}
-                onChange={(e) => setForm({ ...form, yearsOfExperience: e.target.value })}
-              />
-              <Input
-                label="Consultation Fee"
-                type="number"
-                value={form.consultationFee}
-                onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
-              />
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <Input
+                  label="Years of Experience"
+                  type="number"
+                  value={form.yearsOfExperience}
+                  onChange={(e) => setForm({ ...form, yearsOfExperience: e.target.value })}
+                />
+                <Input
+                  label="Consultation Fee"
+                  type="number"
+                  value={form.consultationFee}
+                  onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
+                />
+              </div>
               <Input
                 label="Department"
                 value={form.department}
@@ -135,13 +140,13 @@ export function DoctorDetailPage() {
                 value={form.bio}
                 onChange={(e) => setForm({ ...form, bio: e.target.value })}
               />
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={form.isAvailable}
                   onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })}
                 />
-                <span className="text-sm font-medium">Available</span>
+                <span className="font-medium text-[#191c1d]">Available</span>
               </label>
               <div className="flex gap-2 pt-4">
                 <Button onClick={handleUpdate} className="flex-1">
@@ -153,36 +158,36 @@ export function DoctorDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-700">Specialization</label>
-                <p className="mt-1 text-slate-900">{doctor.specialization}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Specialization</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{doctor.specialization}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">License Number</label>
-                <p className="mt-1 text-slate-900">{doctor.licenseNumber}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">License Number</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{doctor.licenseNumber}</p>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Years of Experience</label>
-                  <p className="mt-1 text-slate-900">{doctor.yearsOfExperience}</p>
+                  <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Years of Experience</label>
+                  <p className="mt-1 text-[#191c1d] font-medium">{doctor.yearsOfExperience}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-700">Consultation Fee</label>
-                  <p className="mt-1 text-slate-900">₹{doctor.consultationFee}</p>
+                  <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Consultation Fee</label>
+                  <p className="mt-1 text-[#191c1d] font-medium">₹{doctor.consultationFee}</p>
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Department</label>
-                <p className="mt-1 text-slate-900">{doctor.department}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Department</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{doctor.department}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Bio</label>
-                <p className="mt-1 text-slate-900">{doctor.bio}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Bio</label>
+                <p className="mt-1 text-[#191c1d] font-medium whitespace-pre-wrap">{doctor.bio}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-slate-700">Status</label>
-                <p className="mt-1 text-slate-900">{doctor.isAvailable ? 'Available' : 'Unavailable'}</p>
+                <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Status</label>
+                <p className="mt-1 text-[#191c1d] font-medium">{doctor.isAvailable ? 'Available' : 'Unavailable'}</p>
               </div>
               <Button onClick={() => setEditMode(true)} className="w-full">
                 Edit
@@ -191,13 +196,16 @@ export function DoctorDetailPage() {
           )}
         </Card>
 
-        <Card>
-          <CardHeader title="Actions" />
+        <Card className="p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+          <div className="mb-4 sm:mb-6">
+            <h2 className="text-lg sm:text-xl font-bold text-[#191c1d]">Actions</h2>
+            <p className="text-sm text-[#404850]">Quick actions for this doctor</p>
+          </div>
           <div className="space-y-3">
             {!editMode && (
               <>
                 <Button onClick={() => setEditMode(true)} className="w-full">
-                  Edit
+                  Edit Doctor
                 </Button>
                 <Button onClick={handleDelete} className="w-full" variant="danger">
                   Delete Doctor

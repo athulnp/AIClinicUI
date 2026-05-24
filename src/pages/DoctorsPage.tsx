@@ -9,7 +9,6 @@ import {
   Badge,
   Button,
   Card,
-  CardHeader,
   EmptyState,
   Input,
   Modal,
@@ -161,44 +160,53 @@ export function DoctorsPage() {
   if (loading && items.length === 0) return <PageLoader />;
 
   return (
-    <div>
-      <Card>
-        <CardHeader title="Doctors" action={<Button onClick={openCreate}>Add doctor profile</Button>} />
-        <p className="px-5 pb-2 text-xs text-slate-500">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#191c1d]">Doctors</h2>
+            <p className="text-sm text-[#404850]">Manage doctor profiles and medical details</p>
+          </div>
+          <Button onClick={openCreate} className="w-full sm:w-auto">Add Doctor</Button>
+        </div>
+      </Card>
+
+      <Card className="shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-0 bg-gradient-to-br from-white to-[#f8f9fa]">
+        <p className="px-4 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm text-[#707881]">
           Doctors must be created as Doctor users first. Doctor profiles attach medical details.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-5 py-3">Name</th>
-                <th className="px-5 py-3">Specialization</th>
-                <th className="px-5 py-3">License</th>
-                <th className="px-5 py-3">Fee (₹)</th>
-                <th className="px-5 py-3">Experience</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3" />
+                <th className="px-3 sm:px-5 py-3">Name</th>
+                <th className="px-3 sm:px-5 py-3">Specialization</th>
+                <th className="px-3 sm:px-5 py-3 hidden sm:table-cell">License</th>
+                <th className="px-3 sm:px-5 py-3">Fee (₹)</th>
+                <th className="px-3 sm:px-5 py-3 hidden sm:table-cell">Experience</th>
+                <th className="px-3 sm:px-5 py-3">Status</th>
+                <th className="px-3 sm:px-5 py-3" />
               </tr>
             </thead>
             <tbody>
               {items.map((d) => (
-                <tr key={d.id} className="border-t border-slate-100">
-                  <td className="px-5 py-3 font-medium">{d.fullName}</td>
-                  <td className="px-5 py-3">{d.specialization}</td>
-                  <td className="px-5 py-3 text-xs">{d.licenseNumber}</td>
-                  <td className="px-5 py-3">{d.consultationFee}</td>
-                  <td className="px-5 py-3">{d.yearsOfExperience} yrs</td>
-                  <td className="px-5 py-3">
+                <tr key={d.id} className="border-t border-slate-100 hover:bg-slate-50 transition-colors">
+                  <td className="px-3 sm:px-5 py-3 font-medium text-[#191c1d]">{d.fullName}</td>
+                  <td className="px-3 sm:px-5 py-3 text-[#404850]">{d.specialization}</td>
+                  <td className="px-3 sm:px-5 py-3 text-xs hidden sm:table-cell text-[#404850]">{d.licenseNumber}</td>
+                  <td className="px-3 sm:px-5 py-3 font-medium text-[#191c1d]">₹{d.consultationFee}</td>
+                  <td className="px-3 sm:px-5 py-3 hidden sm:table-cell text-[#404850]">{d.yearsOfExperience} yrs</td>
+                  <td className="px-3 sm:px-5 py-3">
                     <Badge tone={d.isAvailable ? 'success' : 'danger'}>
                       {d.isAvailable ? 'Available' : 'Unavailable'}
                     </Badge>
                   </td>
-                  <td className="px-5 py-3 text-right space-x-1">
+                  <td className="px-3 sm:px-5 py-3 text-right space-x-1">
                     <Link to={`/doctors/${d.id}`}>
-                      <Button variant="ghost">Details</Button>
+                      <Button variant="ghost" className="text-xs">Details</Button>
                     </Link>
-                    <Button variant="ghost" onClick={() => openEdit(d)}>Edit</Button>
-                    <Button variant="ghost" onClick={() => remove(d.id)}>Delete</Button>
+                    <Button variant="ghost" onClick={() => openEdit(d)} className="text-xs">Edit</Button>
+                    <Button variant="ghost" onClick={() => remove(d.id)} className="text-xs text-red-600">Delete</Button>
                   </td>
                 </tr>
               ))}
@@ -216,10 +224,10 @@ export function DoctorsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <div className="space-y-3">
+        <div className="space-y-3 sm:space-y-4">
           {modal === 'create' && (
             <>
-              <p className="text-sm text-slate-600 mb-2">Create doctor account and profile</p>
+              <p className="text-sm text-[#707881] mb-2">Create doctor account and profile</p>
               <Input
                 label="Username"
                 value={form.username}
@@ -233,19 +241,21 @@ export function DoctorsPage() {
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="Minimum 6 characters"
               />
-              <Input
-                label="Full name"
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                placeholder="Dr. John Doe"
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="john@example.com"
-              />
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <Input
+                  label="Full name"
+                  value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                  placeholder="Dr. John Doe"
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="john@example.com"
+                />
+              </div>
               <Input
                 label="Phone number"
                 value={form.phoneNumber}
@@ -265,7 +275,7 @@ export function DoctorsPage() {
             value={form.licenseNumber}
             onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
             <Input
               label="Years experience"
               type="number"
@@ -289,6 +299,7 @@ export function DoctorsPage() {
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
             placeholder="Professional bio..."
+            type="textarea"
           />
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -296,12 +307,12 @@ export function DoctorsPage() {
               checked={form.isAvailable}
               onChange={(e) => setForm({ ...form, isAvailable: e.target.checked })}
             />
-            <span>Available for appointments</span>
+            <span className="font-medium text-[#191c1d]">Available for appointments</span>
           </label>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
-          <Button onClick={save}>Save</Button>
+        <div className="mt-3 sm:mt-4 flex gap-2">
+          <Button variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
+          <Button onClick={save} className="flex-1">Save</Button>
         </div>
       </Modal>
     </div>

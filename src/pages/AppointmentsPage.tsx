@@ -26,7 +26,9 @@ export function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showReschedule, setShowReschedule] = useState<Appointment | null>(null);
-  const [showNotes, setShowNotes] = useState<Appointment | null>(null);
+  const [showEdit, setShowEdit] = useState<Appointment | null>(null);
+  const [showCancel, setShowCancel] = useState<Appointment | null>(null);
+  const [showComplete, setShowComplete] = useState<Appointment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     patientId: '',
@@ -35,13 +37,19 @@ export function AppointmentsPage() {
     startTime: '09:00',
     endTime: '09:30',
     reason: '',
+    description: '',
   });
   const [rescheduleForm, setRescheduleForm] = useState({
     newAppointmentDate: '',
     newStartTime: '09:00',
     newEndTime: '09:30',
   });
-  const [notesForm, setNotesForm] = useState('');
+  const [completionNotesForm, setCompletionNotesForm] = useState('');
+  const [editForm, setEditForm] = useState({
+    reason: '',
+    description: '',
+    notes: '',
+  });
 
   const load = async () => {
     if (needsClinicContext) return;
@@ -74,6 +82,7 @@ export function AppointmentsPage() {
         startTime: toTimeSpan(form.startTime),
         endTime: toTimeSpan(form.endTime),
         reason: form.reason || undefined,
+        description: form.description || undefined,
       };
       if (isSuperAdmin && selectedClinicId) {
         body.clinicId = selectedClinicId;
@@ -102,34 +111,54 @@ export function AppointmentsPage() {
     }
   };
 
-  const updateNotes = async () => {
-    if (!showNotes) return;
+  const cancel = async () => {
+    if (!showCancel) return;
     setError(null);
     try {
-      await appointmentsApi.updateStatus(showNotes.id, { status: showNotes.status, notes: notesForm });
-      setShowNotes(null);
+      await appointmentsApi.cancel(showCancel.id);
+      setShowCancel(null);
       load();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to update notes');
+      setError(e instanceof ApiError ? e.message : 'Cancellation failed');
     }
   };
 
-  const setStatus = async (id: number, status: AppointmentStatus) => {
+  const edit = async () => {
+    if (!showEdit) return;
+    setError(null);
     try {
-      await appointmentsApi.updateStatus(id, { status });
+      await appointmentsApi.update(showEdit.id, {
+        reason: editForm.reason || undefined,
+        description: editForm.description || undefined,
+        notes: editForm.notes || undefined,
+      });
+      setShowEdit(null);
       load();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Status update failed');
+      setError(e instanceof ApiError ? e.message : 'Failed to update appointment');
     }
   };
 
-  const cancel = async (id: number) => {
-    if (!confirm('Cancel appointment?')) return;
+  const complete = async () => {
+    if (!showComplete) return;
+    setError(null);
     try {
-      await appointmentsApi.cancel(id);
+      // First add a note if content is provided
+      if (completionNotesForm.trim()) {
+        await appointmentsApi.addNote(showComplete.id, {
+          content: completionNotesForm,
+          noteType: 'Clinical',
+        });
+      }
+      // Then update the appointment status to Completed
+      await appointmentsApi.updateStatus(showComplete.id, {
+        status: AppointmentStatus.Completed,
+      });
+      setShowComplete(null);
+      setCompletionNotesForm('');
       load();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Cancellation failed');
+      setError(e instanceof ApiError ? e.message : 'Completion failed');
     }
   };
 
@@ -154,6 +183,7 @@ export function AppointmentsPage() {
                 <th className="px-5 py-3">Time</th>
                 <th className="px-5 py-3">Patient</th>
                 <th className="px-5 py-3">Doctor</th>
+                <th className="px-5 py-3">Description</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3" />
               </tr>
@@ -165,6 +195,7 @@ export function AppointmentsPage() {
                   <td className="px-5 py-3">{formatTime(a.startTime)} – {formatTime(a.endTime)}</td>
                   <td className="px-5 py-3">{a.patientName}</td>
                   <td className="px-5 py-3">{a.doctorName}</td>
+                  <td className="px-5 py-3 text-slate-600">{a.description || '-'}</td>
                   <td className="px-5 py-3">
                     <Badge tone={statusTone(a.status)}>{appointmentStatusLabels[a.status]}</Badge>
                   </td>
@@ -172,16 +203,13 @@ export function AppointmentsPage() {
                     <Link to={`/appointments/${a.id}`}>
                       <Button variant="ghost">Details</Button>
                     </Link>
+                    <Button variant="ghost" onClick={() => { setShowEdit(a); setEditForm({ reason: a.reason || '', description: a.description || '', notes: a.notes || '' }); }}>Edit</Button>
                     {a.status === AppointmentStatus.Scheduled && (
                       <>
                         <Button variant="ghost" onClick={() => { setShowReschedule(a); setRescheduleForm({ newAppointmentDate: a.appointmentDate.split('T')[0], newStartTime: a.startTime.split(':')[0] + ':' + a.startTime.split(':')[1], newEndTime: a.endTime.split(':')[0] + ':' + a.endTime.split(':')[1] }); }}>Reschedule</Button>
-                        <Button variant="ghost" onClick={() => { setShowNotes(a); setNotesForm(a.notes || ''); }}>Notes</Button>
-                        <Button variant="ghost" onClick={() => setStatus(a.id, AppointmentStatus.Completed)}>Complete</Button>
-                        <Button variant="ghost" onClick={() => cancel(a.id)}>Cancel</Button>
+                        <Button variant="ghost" onClick={() => setShowComplete(a)}>Complete</Button>
+                        <Button variant="ghost" onClick={() => setShowCancel(a)}>Cancel</Button>
                       </>
-                    )}
-                    {a.status !== AppointmentStatus.Scheduled && (
-                      <Button variant="ghost" onClick={() => { setShowNotes(a); setNotesForm(a.notes || ''); }}>View</Button>
                     )}
                   </td>
                 </tr>
@@ -219,10 +247,11 @@ export function AppointmentsPage() {
             <Input label="End" type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
           </div>
           <Input label="Reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+          <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setShowCreate(false)}>Cancel</Button>
-          <Button onClick={create}>Book</Button>
+        <div className="mt-3 sm:mt-4 flex gap-2">
+          <Button variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
+          <Button onClick={create} className="flex-1">Book</Button>
         </div>
       </Modal>
 
@@ -250,40 +279,102 @@ export function AppointmentsPage() {
             />
           </div>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setShowReschedule(null)}>Cancel</Button>
-          <Button onClick={reschedule}>Reschedule</Button>
+        <div className="mt-3 sm:mt-4 flex gap-2">
+          <Button variant="secondary" onClick={() => setShowReschedule(null)} className="flex-1">Cancel</Button>
+          <Button onClick={reschedule} className="flex-1">Reschedule</Button>
         </div>
       </Modal>
 
-      <Modal open={!!showNotes} onClose={() => setShowNotes(null)} title="Appointment notes">
+      <Modal open={!!showEdit} onClose={() => setShowEdit(null)} title="Edit appointment">
         {error && <Alert message={error} />}
-        {showNotes && (
+        {showEdit && (
+          <>
+            <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
+              <div>
+                <span className="font-medium text-slate-700">Patient:</span> {showEdit.patientName}
+              </div>
+              <div>
+                <span className="font-medium text-slate-700">Doctor:</span> {showEdit.doctorName}
+              </div>
+              <div>
+                <span className="font-medium text-slate-700">Date:</span> {formatDate(showEdit.appointmentDate)} at {formatTime(showEdit.startTime)}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Input
+                label="Reason"
+                value={editForm.reason}
+                onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+              />
+              <Input
+                label="Description"
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              />
+              <Input
+                label="Notes"
+                value={editForm.notes}
+                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+              />
+            </div>
+            <div className="mt-3 sm:mt-4 flex gap-2">
+              <Button variant="secondary" onClick={() => setShowEdit(null)} className="flex-1">Cancel</Button>
+              <Button onClick={edit} className="flex-1">Save</Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal open={!!showCancel} onClose={() => setShowCancel(null)} title="Cancel appointment">
+        {error && <Alert message={error} />}
+        {showCancel && (
           <>
             <div className="mb-4 space-y-2 pb-4 border-b text-sm">
               <div>
-                <span className="font-medium text-slate-700">Patient:</span> {showNotes.patientName}
+                <span className="font-medium text-slate-700">Patient:</span> {showCancel.patientName}
               </div>
               <div>
-                <span className="font-medium text-slate-700">Doctor:</span> {showNotes.doctorName}
+                <span className="font-medium text-slate-700">Doctor:</span> {showCancel.doctorName}
               </div>
               <div>
-                <span className="font-medium text-slate-700">Date:</span> {formatDate(showNotes.appointmentDate)} at {formatTime(showNotes.startTime)}
+                <span className="font-medium text-slate-700">Date:</span> {formatDate(showCancel.appointmentDate)} at {formatTime(showCancel.startTime)}
               </div>
-              {showNotes.reason && (
-                <div>
-                  <span className="font-medium text-slate-700">Reason:</span> {showNotes.reason}
-                </div>
-              )}
             </div>
+            <p className="text-slate-600 mb-6">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => setShowCancel(null)} className="flex-1">No, keep it</Button>
+              <Button variant="danger" onClick={cancel} className="flex-1">Yes, cancel appointment</Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <Modal open={!!showComplete} onClose={() => setShowComplete(null)} title="Complete appointment">
+        {error && <Alert message={error} />}
+        {showComplete && (
+          <>
+            <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
+              <div>
+                <span className="font-medium text-slate-700">Patient:</span> {showComplete.patientName}
+              </div>
+              <div>
+                <span className="font-medium text-slate-700">Doctor:</span> {showComplete.doctorName}
+              </div>
+              <div>
+                <span className="font-medium text-slate-700">Date:</span> {formatDate(showComplete.appointmentDate)} at {formatTime(showComplete.startTime)}
+              </div>
+            </div>
+            <p className="text-slate-600 mb-3 sm:mb-4 text-sm">Add any notes before completing this appointment (optional).</p>
             <Input
               label="Notes"
-              value={notesForm}
-              onChange={(e) => setNotesForm(e.target.value)}
+              type="textarea"
+              value={completionNotesForm}
+              onChange={(e) => setCompletionNotesForm(e.target.value)}
+              placeholder="Enter completion notes..."
             />
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowNotes(null)}>Close</Button>
-              {showNotes.status === AppointmentStatus.Scheduled && <Button onClick={updateNotes}>Save notes</Button>}
+            <div className="mt-3 sm:mt-4 flex gap-2">
+              <Button variant="secondary" onClick={() => setShowComplete(null)} className="flex-1">Cancel</Button>
+              <Button onClick={complete} className="flex-1">Complete Appointment</Button>
             </div>
           </>
         )}

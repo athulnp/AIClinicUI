@@ -40,13 +40,12 @@ export function BillingPage() {
     if (needsClinicContext) return;
     setLoading(true);
     try {
-      const [b, o, p] = await Promise.all([
+      const [b, p] = await Promise.all([
         billingApi.list({ pageNumber: 1, pageSize: 50 }),
-        billingApi.outstanding({ pageNumber: 1, pageSize: 50 }),
         patientsApi.list({ pageNumber: 1, pageSize: 100 }),
       ]);
       setItems(b.data);
-      setOutstanding(o.data as Billing[]);
+      setOutstanding(b.data.filter((bill) => bill.balanceAmount > 0));
       setPatients(p.data);
     } finally {
       setLoading(false);
@@ -243,9 +242,9 @@ export function BillingPage() {
           />
           <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
-          <Button onClick={modal === 'create' ? create : update}>{modal === 'create' ? 'Create' : 'Save'}</Button>
+        <div className="mt-3 sm:mt-4 flex gap-2">
+          <Button variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
+          <Button onClick={modal === 'create' ? create : update} className="flex-1">{modal === 'create' ? 'Create' : 'Save'}</Button>
         </div>
       </Modal>
 
@@ -253,7 +252,7 @@ export function BillingPage() {
         {error && <Alert message={error} />}
         {payOpen && (
           <>
-            <div className="mb-4 space-y-2 pb-4 border-b text-sm">
+            <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
               <div>
                 <span className="font-medium text-slate-700">Invoice:</span> {payOpen.invoiceNumber}
               </div>
@@ -271,9 +270,9 @@ export function BillingPage() {
               </div>
             </div>
             <Input label="Payment amount" type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setPayOpen(null)}>Cancel</Button>
-              <Button onClick={recordPayment}>Record payment</Button>
+            <div className="mt-3 sm:mt-4 flex gap-2">
+              <Button variant="secondary" onClick={() => setPayOpen(null)} className="flex-1">Cancel</Button>
+              <Button onClick={recordPayment} className="flex-1">Record payment</Button>
             </div>
           </>
         )}
