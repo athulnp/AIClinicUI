@@ -17,6 +17,9 @@ import {
 } from '../components/ui';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { SearchFilter } from '../components/SearchFilter';
+import { ValidationError } from '../components/ValidationError';
+import { createUserSchema, updateUserSchema } from '../validations/authValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function UsersPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -40,6 +43,7 @@ export function UsersPage() {
     email: string;
     phoneNumber: string;
     roleId: number;
+    isActive: boolean;
   }>({
     username: '',
     password: '',
@@ -47,6 +51,7 @@ export function UsersPage() {
     email: '',
     phoneNumber: '',
     roleId: 0,
+    isActive: true,
   });
 
   const emptyForm = {
@@ -56,7 +61,45 @@ export function UsersPage() {
     email: '',
     phoneNumber: '',
     roleId: 0,
+    isActive: true,
   };
+
+  const createValidation = useFormValidation(
+    createUserSchema,
+    async (data) => {
+      const body: Record<string, unknown> = {
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
+        email: data.email || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+        roleId: Number(data.roleId),
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await usersApi.create(body);
+      setModal(null);
+      setForm(emptyForm);
+      load();
+    }
+  );
+
+  const updateValidation = useFormValidation(
+    updateUserSchema,
+    async (data) => {
+      if (!editId) return;
+      await usersApi.update(editId, {
+        fullName: data.fullName,
+        email: data.email || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+        roleId: Number(data.roleId),
+        isActive: data.isActive,
+      });
+      setModal(null);
+      load();
+    }
+  );
 
   const load = async (search?: string) => {
     if (needsClinicContext) return;
@@ -96,6 +139,7 @@ export function UsersPage() {
     setForm(emptyForm);
     setEditId(null);
     setError(null);
+    createValidation.clearErrors();
     setModal('create');
   };
 
@@ -106,29 +150,22 @@ export function UsersPage() {
       email: user.email,
       phoneNumber: user.phoneNumber,
       roleId: user.roleId,
+      isActive: user.isActive,
     });
     setEditId(user.id);
     setError(null);
+    updateValidation.clearErrors();
     setModal('edit');
   };
 
-  const save = async () => {
-    setError(null);
-    try {
-      if (modal === 'create') {
-        const body: Record<string, unknown> = { ...form, password: form.password, roleId: form.roleId };
-        if (isSuperAdmin && selectedClinicId) {
-          body.clinicId = selectedClinicId;
-        }
-        await usersApi.create(body);
-      } else if (editId) {
-        const { password, ...data } = form;
-        await usersApi.update(editId, { ...data, roleId: form.roleId });
-      }
-      setModal(null);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Operation failed');
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (modal === 'create') {
+      const success = await createValidation.handleSubmit(form);
+      if (!success) return;
+    } else {
+      const success = await updateValidation.handleSubmit(form);
+      if (!success) return;
     }
   };
 
@@ -237,24 +274,46 @@ export function UsersPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 sm:space-y-4">
+        <form onSubmit={save} className="space-y-3 sm:space-y-4">
           <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-            <Input label="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} disabled={modal === 'edit'} />
+            <div>
+              <Input label="Username" value={form.username} onChange={(e) => { setForm({ ...form, username: e.target.value }); modal === 'create' ? createValidation.clearFieldError('username') : null; }} disabled={modal === 'edit'} />
+              {modal === 'create' && createValidation.getError('username') && <ValidationError message={createValidation.getError('username')!} />}
+            </div>
             {modal === 'create' && (
-              <Input label="Password" type="password" value={form.password || ''} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+              <div>
+                <Input label="Password" type="password" value={form.password || ''} onChange={(e) => { setForm({ ...form, password: e.target.value }); createValidation.clearFieldError('password'); }} required />
+                {createValidation.getError('password') && <ValidationError message={createValidation.getError('password')!} />}
+              </div>
             )}
           </div>
           <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-            <Input label="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-            <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <div>
+              <Input label="Full name" value={form.fullName} onChange={(e) => { setForm({ ...form, fullName: e.target.value }); modal === 'create' ? createValidation.clearFieldError('fullName') : updateValidation.clearFieldError('fullName'); }} />
+              {modal === 'create' && createValidation.getError('fullName') && <ValidationError message={createValidation.getError('fullName')!} />}
+              {modal === 'edit' && updateValidation.getError('fullName') && <ValidationError message={updateValidation.getError('fullName')!} />}
+            </div>
+            <div>
+              <Input label="Email" value={form.email} onChange={(e) => { setForm({ ...form, email: e.target.value }); modal === 'create' ? createValidation.clearFieldError('email') : updateValidation.clearFieldError('email'); }} />
+              {modal === 'create' && createValidation.getError('email') && <ValidationError message={createValidation.getError('email')!} />}
+              {modal === 'edit' && updateValidation.getError('email') && <ValidationError message={updateValidation.getError('email')!} />}
+            </div>
           </div>
           <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
-            <Input label="Phone" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} />
-            <Select label="Role" value={String(form.roleId)} onChange={(e) => setForm({ ...form, roleId: Number(e.target.value) })} options={roleOptions} />
+            <div>
+              <Input label="Phone" value={form.phoneNumber} onChange={(e) => { setForm({ ...form, phoneNumber: e.target.value }); modal === 'create' ? createValidation.clearFieldError('phoneNumber') : updateValidation.clearFieldError('phoneNumber'); }} />
+              {modal === 'create' && createValidation.getError('phoneNumber') && <ValidationError message={createValidation.getError('phoneNumber')!} />}
+              {modal === 'edit' && updateValidation.getError('phoneNumber') && <ValidationError message={updateValidation.getError('phoneNumber')!} />}
+            </div>
+            <div>
+              <Select label="Role" value={String(form.roleId)} onChange={(e) => { setForm({ ...form, roleId: Number(e.target.value) }); modal === 'create' ? createValidation.clearFieldError('roleId') : updateValidation.clearFieldError('roleId'); }} options={roleOptions} />
+              {modal === 'create' && createValidation.getError('roleId') && <ValidationError message={createValidation.getError('roleId')!} />}
+              {modal === 'edit' && updateValidation.getError('roleId') && <ValidationError message={updateValidation.getError('roleId')!} />}
+            </div>
           </div>
           <div className="mt-3 sm:mt-4 flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1">{modal === 'create' ? 'Create' : 'Save changes'}</Button>
+            <Button type="button" variant="secondary" onClick={() => { setModal(null); createValidation.clearErrors(); updateValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={modal === 'create' ? createValidation.isSubmitting : updateValidation.isSubmitting} className="flex-1">{modal === 'create' ? (createValidation.isSubmitting ? 'Creating...' : 'Create') : (updateValidation.isSubmitting ? 'Saving...' : 'Save changes')}</Button>
           </div>
         </form>
       </Modal>

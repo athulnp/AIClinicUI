@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { type Doctor } from '../types';
 import { Alert, Button, Card, Input, PageLoader } from '../components/ui';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ValidationError } from '../components/ValidationError';
+import { updateDoctorSchema } from '../validations/doctorValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function DoctorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +28,20 @@ export function DoctorDetailPage() {
     bio: '',
     isAvailable: true,
   });
+
+  const updateValidation = useFormValidation(
+    updateDoctorSchema,
+    async (data) => {
+      if (!id) return;
+      await doctorsApi.update(Number(id), {
+        ...data,
+        yearsOfExperience: Number(data.yearsOfExperience),
+        consultationFee: Number(data.consultationFee),
+      });
+      setEditMode(false);
+      await load();
+    }
+  );
 
   useEffect(() => {
     if (needsClinicContext || !id) return;
@@ -50,22 +67,17 @@ export function DoctorDetailPage() {
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!id) return;
     setError(null);
-    try {
-      await doctorsApi.update(Number(id), {
-        ...form,
-        yearsOfExperience: Number(form.yearsOfExperience),
-        consultationFee: Number(form.consultationFee),
-      });
-      setEditMode(false);
-      await load();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      }
-    }
+    const success = await updateValidation.handleSubmit(form);
+    if (!success) return;
+  };
+
+  const handleEditMode = () => {
+    setEditMode(true);
+    updateValidation.clearErrors();
   };
 
   const handleDelete = async () => {
@@ -112,42 +124,60 @@ export function DoctorDetailPage() {
               <p className="text-sm text-[#404850]">{editMode ? 'Update doctor information below' : 'View and manage doctor details'}</p>
             </div>
             {editMode ? (
-            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
-              <Input
-                label="Specialization"
-                value={form.specialization}
-                onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-              />
-              <Input
-                label="License Number"
-                value={form.licenseNumber}
-                onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })}
-              />
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <form onSubmit={handleUpdate} className="space-y-3 sm:space-y-4">
+              <div>
                 <Input
-                  label="Years of Experience"
-                  type="number"
-                  value={form.yearsOfExperience}
-                  onChange={(e) => setForm({ ...form, yearsOfExperience: e.target.value })}
+                  label="Specialization"
+                  value={form.specialization}
+                  onChange={(e) => { setForm({ ...form, specialization: e.target.value }); updateValidation.clearFieldError('specialization'); }}
                 />
-                <Input
-                  label="Consultation Fee"
-                  type="number"
-                  value={form.consultationFee}
-                  onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
-                />
+                {updateValidation.getError('specialization') && <ValidationError message={updateValidation.getError('specialization')!} />}
               </div>
-              <Input
-                label="Department"
-                value={form.department}
-                onChange={(e) => setForm({ ...form, department: e.target.value })}
-              />
-              <Input
-                label="Bio"
-                type="textarea"
-                value={form.bio}
-                onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              />
+              <div>
+                <Input
+                  label="License Number"
+                  value={form.licenseNumber}
+                  onChange={(e) => { setForm({ ...form, licenseNumber: e.target.value }); updateValidation.clearFieldError('licenseNumber'); }}
+                />
+                {updateValidation.getError('licenseNumber') && <ValidationError message={updateValidation.getError('licenseNumber')!} />}
+              </div>
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <div>
+                  <Input
+                    label="Years of Experience"
+                    type="number"
+                    value={form.yearsOfExperience}
+                    onChange={(e) => { setForm({ ...form, yearsOfExperience: e.target.value }); updateValidation.clearFieldError('yearsOfExperience'); }}
+                  />
+                  {updateValidation.getError('yearsOfExperience') && <ValidationError message={updateValidation.getError('yearsOfExperience')!} />}
+                </div>
+                <div>
+                  <Input
+                    label="Consultation Fee"
+                    type="number"
+                    value={form.consultationFee}
+                    onChange={(e) => { setForm({ ...form, consultationFee: e.target.value }); updateValidation.clearFieldError('consultationFee'); }}
+                  />
+                  {updateValidation.getError('consultationFee') && <ValidationError message={updateValidation.getError('consultationFee')!} />}
+                </div>
+              </div>
+              <div>
+                <Input
+                  label="Department"
+                  value={form.department}
+                  onChange={(e) => { setForm({ ...form, department: e.target.value }); updateValidation.clearFieldError('department'); }}
+                />
+                {updateValidation.getError('department') && <ValidationError message={updateValidation.getError('department')!} />}
+              </div>
+              <div>
+                <Input
+                  label="Bio"
+                  type="textarea"
+                  value={form.bio}
+                  onChange={(e) => { setForm({ ...form, bio: e.target.value }); updateValidation.clearFieldError('bio'); }}
+                />
+                {updateValidation.getError('bio') && <ValidationError message={updateValidation.getError('bio')!} />}
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -157,10 +187,10 @@ export function DoctorDetailPage() {
                 <span className="font-medium text-[#191c1d]">Available</span>
               </label>
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  Save Changes
+                <Button type="submit" disabled={updateValidation.isSubmitting} className="flex-1">
+                  {updateValidation.isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Button type="button" onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
+                <Button type="button" onClick={() => { setEditMode(false); updateValidation.clearErrors(); }} variant="secondary" className="flex-1">
                   Cancel
                 </Button>
               </div>
@@ -197,7 +227,7 @@ export function DoctorDetailPage() {
                 <label className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#707881]">Status</label>
                 <p className="mt-1 text-[#191c1d] font-medium">{doctor.isAvailable ? 'Available' : 'Unavailable'}</p>
               </div>
-              <Button onClick={() => setEditMode(true)} className="w-full">
+              <Button onClick={handleEditMode} className="w-full">
                 Edit Doctor
               </Button>
             </div>
@@ -214,7 +244,7 @@ export function DoctorDetailPage() {
             <div className="space-y-3">
               {!editMode && (
                 <>
-                  <Button onClick={() => setEditMode(true)} className="w-full">
+                  <Button onClick={handleEditMode} className="w-full">
                     Edit Doctor
                   </Button>
                   <Button onClick={handleDelete} className="w-full" variant="danger">

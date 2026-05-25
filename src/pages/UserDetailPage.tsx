@@ -6,6 +6,9 @@ import { useAuth } from '../context/AuthContext';
 import { type User } from '../types';
 import { Alert, Badge, Button, Card, Input, PageLoader, Select } from '../components/ui';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ValidationError } from '../components/ValidationError';
+import { updateProfileSchema } from '../validations/authValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function UserDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +26,20 @@ export function UserDetailPage() {
     phoneNumber: '',
     roleId: 0,
   });
+
+  const updateValidation = useFormValidation(
+    updateProfileSchema,
+    async (data) => {
+      if (!id) return;
+      await usersApi.update(Number(id), {
+        fullName: data.fullName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+      });
+      setEditMode(false);
+      await load();
+    }
+  );
 
   useEffect(() => {
     if (needsClinicContext || !id) return;
@@ -49,18 +66,17 @@ export function UserDetailPage() {
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!id) return;
     setError(null);
-    try {
-      await usersApi.update(Number(id), form);
-      setEditMode(false);
-      await load();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      }
-    }
+    const success = await updateValidation.handleSubmit(form);
+    if (!success) return;
+  };
+
+  const handleEditMode = () => {
+    setEditMode(true);
+    updateValidation.clearErrors();
   };
 
   const handleDeactivate = async () => {
@@ -118,23 +134,32 @@ export function UserDetailPage() {
               <p className="text-sm text-[#404850]">{editMode ? 'Update user information below' : 'View and manage user details'}</p>
             </div>
             {editMode ? (
-            <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }} className="space-y-3 sm:space-y-4">
-              <Input
-                label="Full Name"
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-              />
-              <Input
-                label="Email"
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-              <Input
-                label="Phone Number"
-                value={form.phoneNumber}
-                onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-              />
+            <form onSubmit={handleUpdate} className="space-y-3 sm:space-y-4">
+              <div>
+                <Input
+                  label="Full Name"
+                  value={form.fullName}
+                  onChange={(e) => { setForm({ ...form, fullName: e.target.value }); updateValidation.clearFieldError('fullName'); }}
+                />
+                {updateValidation.getError('fullName') && <ValidationError message={updateValidation.getError('fullName')!} />}
+              </div>
+              <div>
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => { setForm({ ...form, email: e.target.value }); updateValidation.clearFieldError('email'); }}
+                />
+                {updateValidation.getError('email') && <ValidationError message={updateValidation.getError('email')!} />}
+              </div>
+              <div>
+                <Input
+                  label="Phone Number"
+                  value={form.phoneNumber}
+                  onChange={(e) => { setForm({ ...form, phoneNumber: e.target.value }); updateValidation.clearFieldError('phoneNumber'); }}
+                />
+                {updateValidation.getError('phoneNumber') && <ValidationError message={updateValidation.getError('phoneNumber')!} />}
+              </div>
               <Select
                 label="Role"
                 value={String(form.roleId)}
@@ -147,10 +172,10 @@ export function UserDetailPage() {
                 ]}
               />
               <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  Save Changes
+                <Button type="submit" disabled={updateValidation.isSubmitting} className="flex-1">
+                  {updateValidation.isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
-                <Button type="button" onClick={() => setEditMode(false)} variant="secondary" className="flex-1">
+                <Button type="button" onClick={() => { setEditMode(false); updateValidation.clearErrors(); }} variant="secondary" className="flex-1">
                   Cancel
                 </Button>
               </div>
@@ -180,7 +205,7 @@ export function UserDetailPage() {
                 </Badge>
               </div>
               {canEdit && (
-                <Button onClick={() => setEditMode(true)} className="w-full">
+                <Button onClick={handleEditMode} className="w-full">
                   Edit
                 </Button>
               )}
@@ -198,7 +223,7 @@ export function UserDetailPage() {
             <div className="space-y-3">
               {!editMode && canEdit && user.isActive && (
                 <>
-                  <Button onClick={() => setEditMode(true)} className="w-full">
+                  <Button onClick={handleEditMode} className="w-full">
                     Edit User
                   </Button>
                   <Button onClick={handleDeactivate} className="w-full" variant="danger">

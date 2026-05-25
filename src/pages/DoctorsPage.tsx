@@ -16,6 +16,9 @@ import {
 } from '../components/ui';
 import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ValidationError } from '../components/ValidationError';
+import { createDoctorSchema, updateDoctorSchema } from '../validations/doctorValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function DoctorsPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -68,6 +71,54 @@ export function DoctorsPage() {
     isAvailable: true,
   };
 
+  const createValidation = useFormValidation(
+    createDoctorSchema,
+    async (data) => {
+      const body: Record<string, unknown> = {
+        // User fields
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
+        email: data.email || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+        // Doctor fields
+        specialization: data.specialization,
+        licenseNumber: data.licenseNumber,
+        yearsOfExperience: Number(data.yearsOfExperience),
+        consultationFee: Number(data.consultationFee),
+        department: data.department || undefined,
+        bio: data.bio || undefined,
+        isAvailable: data.isAvailable,
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await doctorsApi.create(body);
+      setModal(null);
+      setForm(emptyForm);
+      load();
+    }
+  );
+
+  const updateValidation = useFormValidation(
+    updateDoctorSchema,
+    async (data) => {
+      if (!editId) return;
+      const body: Record<string, unknown> = {
+        specialization: data.specialization,
+        licenseNumber: data.licenseNumber,
+        yearsOfExperience: Number(data.yearsOfExperience),
+        consultationFee: Number(data.consultationFee),
+        department: data.department || undefined,
+        bio: data.bio || undefined,
+        isAvailable: data.isAvailable,
+      };
+      await doctorsApi.update(editId, body);
+      setModal(null);
+      load();
+    }
+  );
+
   const load = async () => {
     if (needsClinicContext) return;
     setLoading(true);
@@ -87,6 +138,7 @@ export function DoctorsPage() {
     setForm(emptyForm);
     setEditId(null);
     setError(null);
+    createValidation.clearErrors();
     setModal('create');
   };
 
@@ -110,49 +162,18 @@ export function DoctorsPage() {
     });
     setEditId(doctor.id);
     setError(null);
+    updateValidation.clearErrors();
     setModal('edit');
   };
 
-  const save = async () => {
-    setError(null);
-    try {
-      if (modal === 'create') {
-        const body: Record<string, unknown> = {
-          // User fields
-          username: form.username,
-          password: form.password,
-          fullName: form.fullName,
-          email: form.email,
-          phoneNumber: form.phoneNumber,
-          // Doctor fields
-          specialization: form.specialization,
-          licenseNumber: form.licenseNumber,
-          yearsOfExperience: Number(form.yearsOfExperience),
-          consultationFee: Number(form.consultationFee),
-          department: form.department || undefined,
-          bio: form.bio || undefined,
-          isAvailable: form.isAvailable,
-        };
-        if (isSuperAdmin && selectedClinicId) {
-          body.clinicId = selectedClinicId;
-        }
-        await doctorsApi.create(body);
-      } else if (editId) {
-        const body: Record<string, unknown> = {
-          specialization: form.specialization,
-          licenseNumber: form.licenseNumber,
-          yearsOfExperience: Number(form.yearsOfExperience),
-          consultationFee: Number(form.consultationFee),
-          department: form.department || undefined,
-          bio: form.bio || undefined,
-          isAvailable: form.isAvailable,
-        };
-        await doctorsApi.update(editId, body);
-      }
-      setModal(null);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Operation failed');
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (modal === 'create') {
+      const success = await createValidation.handleSubmit(form);
+      if (!success) return;
+    } else {
+      const success = await updateValidation.handleSubmit(form);
+      if (!success) return;
     }
   };
 
@@ -255,83 +276,122 @@ export function DoctorsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="space-y-3 sm:space-y-4">
+        <form onSubmit={save} className="space-y-3 sm:space-y-4">
           {modal === 'create' && (
             <>
               <p className="text-sm text-[#707881] mb-2">Create doctor account and profile</p>
-              <Input
-                label="Username"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                placeholder="johndoe"
-              />
-              <Input
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Minimum 6 characters"
-              />
-              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+              <div>
                 <Input
-                  label="Full name"
-                  value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  placeholder="Dr. John Doe"
+                  label="Username"
+                  value={form.username}
+                  onChange={(e) => { setForm({ ...form, username: e.target.value }); createValidation.clearFieldError('username'); }}
+                  placeholder="johndoe"
                 />
-                <Input
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="john@example.com"
-                />
+                {createValidation.getError('username') && <ValidationError message={createValidation.getError('username')!} />}
               </div>
-              <Input
-                label="Phone number"
-                value={form.phoneNumber}
-                onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
-                placeholder="1234567890"
-              />
+              <div>
+                <Input
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => { setForm({ ...form, password: e.target.value }); createValidation.clearFieldError('password'); }}
+                  placeholder="Minimum 6 characters"
+                />
+                {createValidation.getError('password') && <ValidationError message={createValidation.getError('password')!} />}
+              </div>
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+                <div>
+                  <Input
+                    label="Full name"
+                    value={form.fullName}
+                    onChange={(e) => { setForm({ ...form, fullName: e.target.value }); createValidation.clearFieldError('fullName'); }}
+                    placeholder="Dr. John Doe"
+                  />
+                  {createValidation.getError('fullName') && <ValidationError message={createValidation.getError('fullName')!} />}
+                </div>
+                <div>
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => { setForm({ ...form, email: e.target.value }); createValidation.clearFieldError('email'); }}
+                    placeholder="john@example.com"
+                  />
+                  {createValidation.getError('email') && <ValidationError message={createValidation.getError('email')!} />}
+                </div>
+              </div>
+              <div>
+                <Input
+                  label="Phone number"
+                  value={form.phoneNumber}
+                  onChange={(e) => { setForm({ ...form, phoneNumber: e.target.value }); createValidation.clearFieldError('phoneNumber'); }}
+                  placeholder="1234567890"
+                />
+                {createValidation.getError('phoneNumber') && <ValidationError message={createValidation.getError('phoneNumber')!} />}
+              </div>
             </>
           )}
-          <Input
-            label="Specialization"
-            value={form.specialization}
-            onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-            placeholder="Orthodontics, Periodontology, etc."
-          />
-          <Input
-            label="License number"
-            value={form.licenseNumber}
-            onChange={(e) => setForm({ ...form, licenseNumber: e.target.value })}
-          />
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+          <div>
             <Input
-              label="Years experience"
-              type="number"
-              value={form.yearsOfExperience}
-              onChange={(e) => setForm({ ...form, yearsOfExperience: e.target.value })}
+              label="Specialization"
+              value={form.specialization}
+              onChange={(e) => { setForm({ ...form, specialization: e.target.value }); modal === 'create' ? createValidation.clearFieldError('specialization') : updateValidation.clearFieldError('specialization'); }}
+              placeholder="Orthodontics, Periodontology, etc."
             />
-            <Input
-              label="Consultation fee"
-              type="number"
-              value={form.consultationFee}
-              onChange={(e) => setForm({ ...form, consultationFee: e.target.value })}
-            />
+            {modal === 'create' && createValidation.getError('specialization') && <ValidationError message={createValidation.getError('specialization')!} />}
+            {modal === 'edit' && updateValidation.getError('specialization') && <ValidationError message={updateValidation.getError('specialization')!} />}
           </div>
-          <Input
-            label="Department"
-            value={form.department}
-            onChange={(e) => setForm({ ...form, department: e.target.value })}
-          />
-          <Input
-            label="Bio"
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            placeholder="Professional bio..."
-            type="textarea"
-          />
+          <div>
+            <Input
+              label="License number"
+              value={form.licenseNumber}
+              onChange={(e) => { setForm({ ...form, licenseNumber: e.target.value }); modal === 'create' ? createValidation.clearFieldError('licenseNumber') : updateValidation.clearFieldError('licenseNumber'); }}
+            />
+            {modal === 'create' && createValidation.getError('licenseNumber') && <ValidationError message={createValidation.getError('licenseNumber')!} />}
+            {modal === 'edit' && updateValidation.getError('licenseNumber') && <ValidationError message={updateValidation.getError('licenseNumber')!} />}
+          </div>
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+            <div>
+              <Input
+                label="Years experience"
+                type="number"
+                value={form.yearsOfExperience}
+                onChange={(e) => { setForm({ ...form, yearsOfExperience: e.target.value }); modal === 'create' ? createValidation.clearFieldError('yearsOfExperience') : updateValidation.clearFieldError('yearsOfExperience'); }}
+              />
+              {modal === 'create' && createValidation.getError('yearsOfExperience') && <ValidationError message={createValidation.getError('yearsOfExperience')!} />}
+              {modal === 'edit' && updateValidation.getError('yearsOfExperience') && <ValidationError message={updateValidation.getError('yearsOfExperience')!} />}
+            </div>
+            <div>
+              <Input
+                label="Consultation fee"
+                type="number"
+                value={form.consultationFee}
+                onChange={(e) => { setForm({ ...form, consultationFee: e.target.value }); modal === 'create' ? createValidation.clearFieldError('consultationFee') : updateValidation.clearFieldError('consultationFee'); }}
+              />
+              {modal === 'create' && createValidation.getError('consultationFee') && <ValidationError message={createValidation.getError('consultationFee')!} />}
+              {modal === 'edit' && updateValidation.getError('consultationFee') && <ValidationError message={updateValidation.getError('consultationFee')!} />}
+            </div>
+          </div>
+          <div>
+            <Input
+              label="Department"
+              value={form.department}
+              onChange={(e) => { setForm({ ...form, department: e.target.value }); modal === 'create' ? createValidation.clearFieldError('department') : updateValidation.clearFieldError('department'); }}
+            />
+            {modal === 'create' && createValidation.getError('department') && <ValidationError message={createValidation.getError('department')!} />}
+            {modal === 'edit' && updateValidation.getError('department') && <ValidationError message={updateValidation.getError('department')!} />}
+          </div>
+          <div>
+            <Input
+              label="Bio"
+              value={form.bio}
+              onChange={(e) => { setForm({ ...form, bio: e.target.value }); modal === 'create' ? createValidation.clearFieldError('bio') : updateValidation.clearFieldError('bio'); }}
+              placeholder="Professional bio..."
+              type="textarea"
+            />
+            {modal === 'create' && createValidation.getError('bio') && <ValidationError message={createValidation.getError('bio')!} />}
+            {modal === 'edit' && updateValidation.getError('bio') && <ValidationError message={updateValidation.getError('bio')!} />}
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -341,8 +401,8 @@ export function DoctorsPage() {
             <span className="font-medium text-[#191c1d]">Available for appointments</span>
           </label>
           <div className="mt-3 sm:mt-4 flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1">Save</Button>
+            <Button type="button" variant="secondary" onClick={() => { setModal(null); createValidation.clearErrors(); updateValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={modal === 'create' ? createValidation.isSubmitting : updateValidation.isSubmitting} className="flex-1">{modal === 'create' ? (createValidation.isSubmitting ? 'Creating...' : 'Save') : (updateValidation.isSubmitting ? 'Saving...' : 'Save')}</Button>
           </div>
         </form>
       </Modal>
