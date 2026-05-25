@@ -18,6 +18,9 @@ import {
 } from '../components/ui';
 import { SearchFilter } from '../components/SearchFilter';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ValidationError } from '../components/ValidationError';
+import { patientSchema } from '../validations/patientValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 const emptyForm: {
   fullName: string;
@@ -61,6 +64,23 @@ export function PatientsPage() {
     patientId: null,
   });
 
+  const { isSubmitting, handleSubmit, getError, clearErrors, clearFieldError } = useFormValidation(
+    patientSchema,
+    async (data) => {
+      const body: Record<string, unknown> = { ...data, gender: Number(data.gender) };
+      if (modal === 'create') {
+        if (isSuperAdmin && selectedClinicId) {
+          body.clinicId = selectedClinicId;
+        }
+        await patientsApi.create(body);
+      } else if (editId) {
+        await patientsApi.update(editId, body);
+      }
+      setModal(null);
+      load();
+    }
+  );
+
   const load = useCallback(async () => {
     if (needsClinicContext) return;
     setLoading(true);
@@ -102,25 +122,15 @@ export function PatientsPage() {
     });
     setEditId(p.id);
     setError(null);
+    clearErrors();
     setModal('edit');
   };
 
-  const save = async () => {
-    setError(null);
-    try {
-      const body: Record<string, unknown> = { ...form, gender: Number(form.gender) };
-      if (modal === 'create') {
-        if (isSuperAdmin && selectedClinicId) {
-          body.clinicId = selectedClinicId;
-        }
-        await patientsApi.create(body);
-      } else if (editId) {
-        await patientsApi.update(editId, body);
-      }
-      setModal(null);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Save failed');
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await handleSubmit(form);
+    if (!success) {
+      return;
     }
   };
 
@@ -228,21 +238,48 @@ export function PatientsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); save(); }} className="grid gap-3 sm:grid-cols-2">
-          <Input label="Full name" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} required />
-          <Select label="Gender" value={form.gender} onChange={(e) => setForm({ ...form, gender: Number(e.target.value) as Gender })} options={Object.entries(genderLabels).map(([k, v]) => ({ value: k, label: v }))} />
-          <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })} required />
-          <Input label="Phone" value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} required />
-          <Input label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Input label="Blood group" value={form.bloodGroup} onChange={(e) => setForm({ ...form, bloodGroup: e.target.value })} />
-          <Input label="Emergency contact" value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
+        <form onSubmit={handleSave} className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Input label="Full name" value={form.fullName} onChange={(e) => { setForm({ ...form, fullName: e.target.value }); clearFieldError('fullName'); }} required />
+            {getError('fullName') && <ValidationError message={getError('fullName')!} />}
+          </div>
+          <div>
+            <Select label="Gender" value={form.gender} onChange={(e) => { setForm({ ...form, gender: Number(e.target.value) as Gender }); clearFieldError('gender'); }} options={Object.entries(genderLabels).map(([k, v]) => ({ value: k, label: v }))} />
+            {getError('gender') && <ValidationError message={getError('gender')!} />}
+          </div>
+          <div>
+            <Input label="Date of birth" type="date" value={form.dateOfBirth} onChange={(e) => { setForm({ ...form, dateOfBirth: e.target.value }); clearFieldError('dateOfBirth'); }} required />
+            {getError('dateOfBirth') && <ValidationError message={getError('dateOfBirth')!} />}
+          </div>
+          <div>
+            <Input label="Phone" value={form.phoneNumber} onChange={(e) => { setForm({ ...form, phoneNumber: e.target.value }); clearFieldError('phoneNumber'); }} required />
+            {getError('phoneNumber') && <ValidationError message={getError('phoneNumber')!} />}
+          </div>
+          <div>
+            <Input label="Email" value={form.email} onChange={(e) => { setForm({ ...form, email: e.target.value }); clearFieldError('email'); }} />
+            {getError('email') && <ValidationError message={getError('email')!} />}
+          </div>
+          <div>
+            <Input label="Blood group" value={form.bloodGroup} onChange={(e) => { setForm({ ...form, bloodGroup: e.target.value }); clearFieldError('bloodGroup'); }} />
+            {getError('bloodGroup') && <ValidationError message={getError('bloodGroup')!} />}
+          </div>
+          <div>
+            <Input label="Emergency contact" value={form.emergencyContact} onChange={(e) => { setForm({ ...form, emergencyContact: e.target.value }); clearFieldError('emergencyContact'); }} />
+            {getError('emergencyContact') && <ValidationError message={getError('emergencyContact')!} />}
+          </div>
         </form>
-        <form onSubmit={(e) => { e.preventDefault(); save(); }}>
-          <Input label="Address" className="mt-3" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
-          <Input label="Allergies" className="mt-3" value={form.allergies} onChange={(e) => setForm({ ...form, allergies: e.target.value })} />
+        <form onSubmit={handleSave}>
+          <div className="mt-3">
+            <Input label="Address" value={form.address} onChange={(e) => { setForm({ ...form, address: e.target.value }); clearFieldError('address'); }} />
+            {getError('address') && <ValidationError message={getError('address')!} />}
+          </div>
+          <div className="mt-3">
+            <Input label="Allergies" value={form.allergies} onChange={(e) => { setForm({ ...form, allergies: e.target.value }); clearFieldError('allergies'); }} />
+            {getError('allergies') && <ValidationError message={getError('allergies')!} />}
+          </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setModal(null)}>Cancel</Button>
-            <Button type="submit">Save</Button>
+            <Button type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save'}</Button>
           </div>
         </form>
       </Modal>

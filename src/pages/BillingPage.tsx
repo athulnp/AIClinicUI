@@ -18,6 +18,9 @@ import {
 } from '../components/ui';
 import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { ValidationError } from '../components/ValidationError';
+import { createBillingSchema, updateBillingSchema, recordPaymentSchema } from '../validations/billingValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function BillingPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -50,6 +53,55 @@ export function BillingPage() {
   });
   const [payAmount, setPayAmount] = useState('');
 
+  const createValidation = useFormValidation(
+    createBillingSchema,
+    async (data) => {
+      const body: Record<string, unknown> = {
+        patientId: Number(data.patientId),
+        totalAmount: Number(data.totalAmount),
+        paymentMethod: Number(data.paymentMethod),
+        notes: data.notes || undefined,
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await billingApi.create(body);
+      setModal(null);
+      setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' });
+      load();
+    }
+  );
+
+  const updateValidation = useFormValidation(
+    updateBillingSchema,
+    async (data) => {
+      if (!editId) return;
+      await billingApi.update(editId, {
+        patientId: Number(data.patientId),
+        totalAmount: Number(data.totalAmount),
+        paymentMethod: Number(data.paymentMethod),
+        notes: data.notes || undefined,
+      });
+      setModal(null);
+      load();
+    }
+  );
+
+  const recordPaymentValidation = useFormValidation(
+    recordPaymentSchema,
+    async (data) => {
+      if (!payOpen) return;
+      await billingApi.recordPayment(payOpen.id, {
+        paymentAmount: Number(data.paymentAmount),
+        paymentMethod: Number(data.paymentMethod),
+        notes: data.notes || undefined,
+      });
+      setPayOpen(null);
+      setPayAmount('');
+      load();
+    }
+  );
+
   const load = async () => {
     if (needsClinicContext) return;
     setLoading(true);
@@ -70,25 +122,10 @@ export function BillingPage() {
     load();
   }, [needsClinicContext, selectedClinicId]);
 
-  const create = async () => {
-    setError(null);
-    try {
-      const body: Record<string, unknown> = {
-        patientId: Number(form.patientId),
-        totalAmount: Number(form.totalAmount),
-        paymentMethod: Number(form.paymentMethod),
-        notes: form.notes || undefined,
-      };
-      if (isSuperAdmin && selectedClinicId) {
-        body.clinicId = selectedClinicId;
-      }
-      await billingApi.create(body);
-      setModal(null);
-      setForm({ patientId: '', totalAmount: '', paymentMethod: PaymentMethod.Cash, notes: '' });
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to create invoice');
-    }
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await createValidation.handleSubmit(form);
+    if (!success) return;
   };
 
   const openEdit = (billing: Billing) => {
@@ -100,23 +137,14 @@ export function BillingPage() {
     });
     setEditId(billing.id);
     setError(null);
+    updateValidation.clearErrors();
     setModal('edit');
   };
 
-  const update = async () => {
-    setError(null);
-    try {
-      await billingApi.update(editId!, {
-        patientId: Number(form.patientId),
-        totalAmount: Number(form.totalAmount),
-        paymentMethod: Number(form.paymentMethod),
-        notes: form.notes || undefined,
-      });
-      setModal(null);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to update invoice');
-    }
+  const update = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await updateValidation.handleSubmit(form);
+    if (!success) return;
   };
 
   const remove = async (id: number) => {
@@ -134,20 +162,15 @@ export function BillingPage() {
     }
   };
 
-  const recordPayment = async () => {
-    if (!payOpen) return;
-    setError(null);
-    try {
-      await billingApi.recordPayment(payOpen.id, {
-        paymentAmount: Number(payAmount),
-        paymentMethod: payOpen.paymentMethod,
-      });
-      setPayOpen(null);
-      setPayAmount('');
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to record payment');
-    }
+  const recordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const paymentForm = {
+      paymentAmount: payAmount,
+      paymentMethod: payOpen?.paymentMethod || 0,
+      notes: '',
+    };
+    const success = await recordPaymentValidation.handleSubmit(paymentForm);
+    if (!success) return;
   };
 
   const totalAmount = items.reduce((sum, b) => sum + b.totalAmount, 0);
@@ -257,24 +280,40 @@ export function BillingPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); modal === 'create' ? create() : update(); }} className="space-y-3">
-          <Select
-            label="Patient"
-            value={form.patientId}
-            onChange={(e) => setForm({ ...form, patientId: e.target.value })}
-            options={[{ value: '', label: 'Select…' }, ...patients.map((p) => ({ value: p.id, label: p.fullName }))]}
-          />
-          <Input label="Total amount" type="number" value={form.totalAmount} onChange={(e) => setForm({ ...form, totalAmount: e.target.value })} />
-          <Select
-            label="Payment method"
-            value={form.paymentMethod}
-            onChange={(e) => setForm({ ...form, paymentMethod: Number(e.target.value) as PaymentMethod })}
-            options={Object.entries(paymentMethodLabels).map(([k, v]) => ({ value: k, label: v }))}
-          />
-          <Input label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+        <form onSubmit={modal === 'create' ? create : update} className="space-y-3">
+          <div>
+            <Select
+              label="Patient"
+              value={form.patientId}
+              onChange={(e) => { setForm({ ...form, patientId: e.target.value }); modal === 'create' ? createValidation.clearFieldError('patientId') : updateValidation.clearFieldError('patientId'); }}
+              options={[{ value: '', label: 'Select…' }, ...patients.map((p) => ({ value: p.id, label: p.fullName }))]}
+            />
+            {modal === 'create' && createValidation.getError('patientId') && <ValidationError message={createValidation.getError('patientId')!} />}
+            {modal === 'edit' && updateValidation.getError('patientId') && <ValidationError message={updateValidation.getError('patientId')!} />}
+          </div>
+          <div>
+            <Input label="Total amount" type="number" value={form.totalAmount} onChange={(e) => { setForm({ ...form, totalAmount: e.target.value }); modal === 'create' ? createValidation.clearFieldError('totalAmount') : updateValidation.clearFieldError('totalAmount'); }} />
+            {modal === 'create' && createValidation.getError('totalAmount') && <ValidationError message={createValidation.getError('totalAmount')!} />}
+            {modal === 'edit' && updateValidation.getError('totalAmount') && <ValidationError message={updateValidation.getError('totalAmount')!} />}
+          </div>
+          <div>
+            <Select
+              label="Payment method"
+              value={form.paymentMethod}
+              onChange={(e) => { setForm({ ...form, paymentMethod: Number(e.target.value) as PaymentMethod }); modal === 'create' ? createValidation.clearFieldError('paymentMethod') : updateValidation.clearFieldError('paymentMethod'); }}
+              options={Object.entries(paymentMethodLabels).map(([k, v]) => ({ value: k, label: v }))}
+            />
+            {modal === 'create' && createValidation.getError('paymentMethod') && <ValidationError message={createValidation.getError('paymentMethod')!} />}
+            {modal === 'edit' && updateValidation.getError('paymentMethod') && <ValidationError message={updateValidation.getError('paymentMethod')!} />}
+          </div>
+          <div>
+            <Input label="Notes" value={form.notes} onChange={(e) => { setForm({ ...form, notes: e.target.value }); modal === 'create' ? createValidation.clearFieldError('notes') : updateValidation.clearFieldError('notes'); }} />
+            {modal === 'create' && createValidation.getError('notes') && <ValidationError message={createValidation.getError('notes')!} />}
+            {modal === 'edit' && updateValidation.getError('notes') && <ValidationError message={updateValidation.getError('notes')!} />}
+          </div>
           <div className="mt-3 sm:mt-4 flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setModal(null)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1">{modal === 'create' ? 'Create' : 'Save'}</Button>
+            <Button type="button" variant="secondary" onClick={() => { setModal(null); createValidation.clearErrors(); updateValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={modal === 'create' ? createValidation.isSubmitting : updateValidation.isSubmitting} className="flex-1">{modal === 'create' ? (createValidation.isSubmitting ? 'Creating...' : 'Create') : (updateValidation.isSubmitting ? 'Saving...' : 'Save')}</Button>
           </div>
         </form>
       </Modal>
@@ -282,7 +321,7 @@ export function BillingPage() {
       <Modal open={!!payOpen} onClose={() => setPayOpen(null)} title="Record payment">
         {error && <Alert message={error} />}
         {payOpen && (
-          <form onSubmit={(e) => { e.preventDefault(); recordPayment(); }}>
+          <form onSubmit={recordPayment}>
             <div className="mb-3 sm:mb-4 space-y-2 pb-4 border-b text-xs sm:text-sm">
               <div>
                 <span className="font-medium text-slate-700">Invoice:</span> {payOpen.invoiceNumber}
@@ -300,10 +339,26 @@ export function BillingPage() {
                 <span className="font-medium text-slate-700">Balance:</span> ₹{payOpen.balanceAmount.toFixed(2)}
               </div>
             </div>
-            <Input label="Payment amount" type="number" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} />
+            <div>
+              <Input label="Payment amount" type="number" value={payAmount} onChange={(e) => { setPayAmount(e.target.value); recordPaymentValidation.clearFieldError('paymentAmount'); }} />
+              {recordPaymentValidation.getError('paymentAmount') && <ValidationError message={recordPaymentValidation.getError('paymentAmount')!} />}
+            </div>
+            <div className="mt-3">
+              <Select
+                label="Payment method"
+                value={payOpen.paymentMethod}
+                onChange={() => recordPaymentValidation.clearFieldError('paymentMethod')}
+                options={Object.entries(paymentMethodLabels).map(([k, v]) => ({ value: k, label: v }))}
+              />
+              {recordPaymentValidation.getError('paymentMethod') && <ValidationError message={recordPaymentValidation.getError('paymentMethod')!} />}
+            </div>
+            <div className="mt-3">
+              <Input label="Notes" value="" onChange={() => recordPaymentValidation.clearFieldError('notes')} />
+              {recordPaymentValidation.getError('notes') && <ValidationError message={recordPaymentValidation.getError('notes')!} />}
+            </div>
             <div className="mt-3 sm:mt-4 flex gap-2">
-              <Button type="button" variant="secondary" onClick={() => setPayOpen(null)} className="flex-1">Cancel</Button>
-              <Button type="submit" className="flex-1">Record payment</Button>
+              <Button type="button" variant="secondary" onClick={() => { setPayOpen(null); recordPaymentValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+              <Button type="submit" disabled={recordPaymentValidation.isSubmitting} className="flex-1">{recordPaymentValidation.isSubmitting ? 'Recording...' : 'Record Payment'}</Button>
             </div>
           </form>
         )}

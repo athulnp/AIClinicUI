@@ -18,6 +18,9 @@ import {
   Select,
 } from '../components/ui';
 import { SearchFilter, useDebouncedSearch } from '../components/SearchFilter';
+import { ValidationError } from '../components/ValidationError';
+import { appointmentSchema, rescheduleAppointmentSchema } from '../validations/appointmentValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function AppointmentsPage() {
   const { needsClinicContext, isSuperAdmin, selectedClinicId } = useAuth();
@@ -56,6 +59,50 @@ export function AppointmentsPage() {
     notes: '',
   });
 
+  const createValidation = useFormValidation(
+    appointmentSchema,
+    async (data) => {
+      const body: Record<string, unknown> = {
+        patientId: Number(data.patientId),
+        doctorId: Number(data.doctorId),
+        appointmentDate: data.appointmentDate,
+        startTime: toTimeSpan(data.startTime),
+        endTime: toTimeSpan(data.endTime),
+        reason: data.reason || undefined,
+        description: data.description || undefined,
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
+      }
+      await appointmentsApi.create(body);
+      setShowCreate(false);
+      setForm({
+        patientId: '',
+        doctorId: '',
+        appointmentDate: '',
+        startTime: '09:00',
+        endTime: '09:30',
+        reason: '',
+        description: '',
+      });
+      load();
+    }
+  );
+
+  const rescheduleValidation = useFormValidation(
+    rescheduleAppointmentSchema,
+    async (data) => {
+      if (!showReschedule) return;
+      await appointmentsApi.reschedule(showReschedule.id, {
+        newAppointmentDate: data.newAppointmentDate,
+        newStartTime: toTimeSpan(data.newStartTime),
+        newEndTime: toTimeSpan(data.newEndTime),
+      });
+      setShowReschedule(null);
+      load();
+    }
+  );
+
   const load = async () => {
     if (needsClinicContext) return;
     setLoading(true);
@@ -80,42 +127,19 @@ export function AppointmentsPage() {
     load();
   }, [needsClinicContext, selectedClinicId]);
 
-  const create = async () => {
-    setError(null);
-    try {
-      const body: Record<string, unknown> = {
-        patientId: Number(form.patientId),
-        doctorId: Number(form.doctorId),
-        appointmentDate: form.appointmentDate,
-        startTime: toTimeSpan(form.startTime),
-        endTime: toTimeSpan(form.endTime),
-        reason: form.reason || undefined,
-        description: form.description || undefined,
-      };
-      if (isSuperAdmin && selectedClinicId) {
-        body.clinicId = selectedClinicId;
-      }
-      await appointmentsApi.create(body);
-      setShowCreate(false);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to book appointment');
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await createValidation.handleSubmit(form);
+    if (!success) {
+      return;
     }
   };
 
-  const reschedule = async () => {
-    if (!showReschedule) return;
-    setError(null);
-    try {
-      await appointmentsApi.reschedule(showReschedule.id, {
-        newAppointmentDate: rescheduleForm.newAppointmentDate,
-        newStartTime: toTimeSpan(rescheduleForm.newStartTime),
-        newEndTime: toTimeSpan(rescheduleForm.newEndTime),
-      });
-      setShowReschedule(null);
-      load();
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Failed to reschedule');
+  const reschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await rescheduleValidation.handleSubmit(rescheduleForm);
+    if (!success) {
+      return;
     }
   };
 
@@ -253,59 +277,89 @@ export function AppointmentsPage() {
             <p className="mt-1 text-sm text-slate-600">Creating for currently selected clinic (ID: {selectedClinicId})</p>
           </div>
         )}
-        <form onSubmit={(e) => { e.preventDefault(); create(); }} className="space-y-3">
-          <Select
-            label="Patient"
-            value={form.patientId}
-            onChange={(e) => setForm({ ...form, patientId: e.target.value })}
-            options={[{ value: '', label: 'Select…' }, ...patients.map((p) => ({ value: p.id, label: p.fullName }))]}
-          />
-          <Select
-            label="Doctor"
-            value={form.doctorId}
-            onChange={(e) => setForm({ ...form, doctorId: e.target.value })}
-            options={[{ value: '', label: 'Select…' }, ...doctors.map((d) => ({ value: d.id, label: `${d.fullName} - ${d.specialization}` }))]}
-          />
-          <Input label="Date" type="date" value={form.appointmentDate} onChange={(e) => setForm({ ...form, appointmentDate: e.target.value })} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Start" type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} />
-            <Input label="End" type="time" value={form.endTime} onChange={(e) => setForm({ ...form, endTime: e.target.value })} />
+        <form onSubmit={create} className="space-y-3">
+          <div>
+            <Select
+              label="Patient"
+              value={form.patientId}
+              onChange={(e) => { setForm({ ...form, patientId: e.target.value }); createValidation.clearFieldError('patientId'); }}
+              options={[{ value: '', label: 'Select…' }, ...patients.map((p) => ({ value: p.id, label: p.fullName }))]}
+            />
+            {createValidation.getError('patientId') && <ValidationError message={createValidation.getError('patientId')!} />}
           </div>
-          <Input label="Reason" value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
-          <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <div>
+            <Select
+              label="Doctor"
+              value={form.doctorId}
+              onChange={(e) => { setForm({ ...form, doctorId: e.target.value }); createValidation.clearFieldError('doctorId'); }}
+              options={[{ value: '', label: 'Select…' }, ...doctors.map((d) => ({ value: d.id, label: `${d.fullName} - ${d.specialization}` }))]}
+            />
+            {createValidation.getError('doctorId') && <ValidationError message={createValidation.getError('doctorId')!} />}
+          </div>
+          <div>
+            <Input label="Date" type="date" value={form.appointmentDate} onChange={(e) => { setForm({ ...form, appointmentDate: e.target.value }); createValidation.clearFieldError('appointmentDate'); }} />
+            {createValidation.getError('appointmentDate') && <ValidationError message={createValidation.getError('appointmentDate')!} />}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Input label="Start" type="time" value={form.startTime} onChange={(e) => { setForm({ ...form, startTime: e.target.value }); createValidation.clearFieldError('startTime'); }} />
+              {createValidation.getError('startTime') && <ValidationError message={createValidation.getError('startTime')!} />}
+            </div>
+            <div>
+              <Input label="End" type="time" value={form.endTime} onChange={(e) => { setForm({ ...form, endTime: e.target.value }); createValidation.clearFieldError('endTime'); }} />
+              {createValidation.getError('endTime') && <ValidationError message={createValidation.getError('endTime')!} />}
+            </div>
+          </div>
+          <div>
+            <Input label="Reason" value={form.reason} onChange={(e) => { setForm({ ...form, reason: e.target.value }); createValidation.clearFieldError('reason'); }} />
+            {createValidation.getError('reason') && <ValidationError message={createValidation.getError('reason')!} />}
+          </div>
+          <div>
+            <Input label="Description" value={form.description} onChange={(e) => { setForm({ ...form, description: e.target.value }); createValidation.clearFieldError('description'); }} />
+            {createValidation.getError('description') && <ValidationError message={createValidation.getError('description')!} />}
+          </div>
           <div className="mt-3 sm:mt-4 flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowCreate(false)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1">Book</Button>
+            <Button type="button" variant="secondary" onClick={() => { setShowCreate(false); createValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={createValidation.isSubmitting} className="flex-1">{createValidation.isSubmitting ? 'Booking...' : 'Book'}</Button>
           </div>
         </form>
       </Modal>
 
       <Modal open={!!showReschedule} onClose={() => setShowReschedule(null)} title="Reschedule appointment">
         {error && <Alert message={error} />}
-        <form onSubmit={(e) => { e.preventDefault(); reschedule(); }} className="space-y-3">
-          <Input
-            label="New date"
-            type="date"
-            value={rescheduleForm.newAppointmentDate}
-            onChange={(e) => setRescheduleForm({ ...rescheduleForm, newAppointmentDate: e.target.value })}
-          />
+        <form onSubmit={reschedule} className="space-y-3">
+          <div>
+            <Input
+              label="New date"
+              type="date"
+              value={rescheduleForm.newAppointmentDate}
+              onChange={(e) => { setRescheduleForm({ ...rescheduleForm, newAppointmentDate: e.target.value }); rescheduleValidation.clearFieldError('newAppointmentDate'); }}
+            />
+            {rescheduleValidation.getError('newAppointmentDate') && <ValidationError message={rescheduleValidation.getError('newAppointmentDate')!} />}
+          </div>
           <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Start time"
-              type="time"
-              value={rescheduleForm.newStartTime}
-              onChange={(e) => setRescheduleForm({ ...rescheduleForm, newStartTime: e.target.value })}
-            />
-            <Input
-              label="End time"
-              type="time"
-              value={rescheduleForm.newEndTime}
-              onChange={(e) => setRescheduleForm({ ...rescheduleForm, newEndTime: e.target.value })}
-            />
+            <div>
+              <Input
+                label="Start time"
+                type="time"
+                value={rescheduleForm.newStartTime}
+                onChange={(e) => { setRescheduleForm({ ...rescheduleForm, newStartTime: e.target.value }); rescheduleValidation.clearFieldError('newStartTime'); }}
+              />
+              {rescheduleValidation.getError('newStartTime') && <ValidationError message={rescheduleValidation.getError('newStartTime')!} />}
+            </div>
+            <div>
+              <Input
+                label="End time"
+                type="time"
+                value={rescheduleForm.newEndTime}
+                onChange={(e) => { setRescheduleForm({ ...rescheduleForm, newEndTime: e.target.value }); rescheduleValidation.clearFieldError('newEndTime'); }}
+              />
+              {rescheduleValidation.getError('newEndTime') && <ValidationError message={rescheduleValidation.getError('newEndTime')!} />}
+            </div>
           </div>
           <div className="mt-3 sm:mt-4 flex gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowReschedule(null)} className="flex-1">Cancel</Button>
-            <Button type="submit" className="flex-1">Reschedule</Button>
+            <Button type="button" variant="secondary" onClick={() => { setShowReschedule(null); rescheduleValidation.clearErrors(); }} className="flex-1">Cancel</Button>
+            <Button type="submit" disabled={rescheduleValidation.isSubmitting} className="flex-1">{rescheduleValidation.isSubmitting ? 'Rescheduling...' : 'Reschedule'}</Button>
           </div>
         </form>
       </Modal>

@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { Alert, Button, Card, Input } from '../components/ui';
 import { Building2, Lock, User, Shield } from 'lucide-react';
+import { ValidationError } from '../components/ValidationError';
+import { loginSchema } from '../validations/authValidation';
+import { useFormValidation } from '../hooks/useFormValidation';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -16,31 +18,38 @@ export function LoginPage() {
   const [password, setPassword] = useState('Admin@123');
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+
+  const { isSubmitting, handleSubmit, getError, clearFieldError } = useFormValidation(
+    loginSchema,
+    async (data) => {
+      await login({
+        username: data.username,
+        password: data.password,
+        ...(mode === 'platform'
+          ? {}
+          : useId
+            ? { clinicId: data.clinicId }
+            : { clinicCode: data.clinicCode }),
+      });
+      navigate('/');
+    }
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setErrors([]);
-    setLoading(true);
-    try {
-      await login({
-        username,
-        password,
-        ...(mode === 'platform'
-          ? {}
-          : useId
-            ? { clinicId: Number(clinicId) }
-            : { clinicCode: clinicCode.trim() }),
-      });
-      navigate('/');
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-        setErrors(err.errors);
-      } else setError('Login failed');
-    } finally {
-      setLoading(false);
+    
+    const form = {
+      username,
+      password,
+      clinicCode: mode === 'clinic' && !useId ? clinicCode : '',
+      clinicId: mode === 'clinic' && useId ? Number(clinicId) : undefined,
+    };
+    
+    const success = await handleSubmit(form);
+    if (!success) {
+      return;
     }
   };
 
@@ -96,22 +105,28 @@ export function LoginPage() {
                   <span className="text-xs sm:text-sm font-medium text-[#191c1d]">Login with clinic ID instead of code</span>
                 </label>
                 {useId ? (
-                  <Input
-                    label="Clinic ID"
-                    type="number"
-                    value={clinicId}
-                    onChange={(e) => setClinicId(e.target.value)}
-                    placeholder="1"
-                    required
-                  />
+                  <div>
+                    <Input
+                      label="Clinic ID"
+                      type="number"
+                      value={clinicId}
+                      onChange={(e) => { setClinicId(e.target.value); clearFieldError('clinicId'); }}
+                      placeholder="1"
+                      required
+                    />
+                    {getError('clinicId') && <ValidationError message={getError('clinicId')!} />}
+                  </div>
                 ) : (
-                  <Input
-                    label="Clinic code"
-                    value={clinicCode}
-                    onChange={(e) => setClinicCode(e.target.value)}
-                    placeholder="demo-dental"
-                    required
-                  />
+                  <div>
+                    <Input
+                      label="Clinic code"
+                      value={clinicCode}
+                      onChange={(e) => { setClinicCode(e.target.value); clearFieldError('clinicCode'); }}
+                      placeholder="demo-dental"
+                      required
+                    />
+                    {getError('clinicCode') && <ValidationError message={getError('clinicCode')!} />}
+                  </div>
                 )}
               </div>
             )}
@@ -121,27 +136,29 @@ export function LoginPage() {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setUsername(e.target.value); clearFieldError('username'); }}
                 placeholder="Username"
                 required
                 className="w-full rounded-lg border border-[#bfc7d1] bg-white pl-12 pr-4 py-3 text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all placeholder:text-[#707881]"
               />
             </div>
+            {getError('username') && <ValidationError message={getError('username')!} />}
 
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#707881]" />
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
                 placeholder="Password"
                 required
                 className="w-full rounded-lg border border-[#bfc7d1] bg-white pl-12 pr-4 py-3 text-[#191c1d] outline-none focus:border-[#005d90] focus:bg-white focus:ring-2 focus:ring-[#005d90]/20 transition-all placeholder:text-[#707881]"
               />
             </div>
+            {getError('password') && <ValidationError message={getError('password')!} />}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign in'}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
 
