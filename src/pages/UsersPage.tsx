@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { usersApi, rolesApi } from '../api/services';
@@ -101,7 +101,7 @@ export function UsersPage() {
     }
   );
 
-  const load = async (search?: string) => {
+  const load = useCallback(async (search?: string) => {
     if (needsClinicContext) return;
     setLoading(true);
     try {
@@ -111,14 +111,14 @@ export function UsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [needsClinicContext]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     load(query);
   };
 
-  const loadRoles = async () => {
+  const loadRoles = useCallback(async () => {
     try {
       const res = await rolesApi.list();
       setRoles(res);
@@ -128,12 +128,12 @@ export function UsersPage() {
     } catch (e) {
       console.error('Failed to load roles', e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     load();
     loadRoles();
-  }, [needsClinicContext, selectedClinicId]);
+  }, [load, loadRoles]);
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -282,7 +282,7 @@ export function UsersPage() {
             </div>
             {modal === 'create' && (
               <div>
-                <Input label="Password" type="password" value={form.password || ''} onChange={(e) => { setForm({ ...form, password: e.target.value }); createValidation.clearFieldError('password'); }} required />
+                <Input label="Password" type="password" value={form.password || ''} onChange={(e) => { setForm({ ...form, password: e.target.value }); createValidation.clearFieldError('password'); }} />
                 {createValidation.getError('password') && <ValidationError message={createValidation.getError('password')!} />}
               </div>
             )}
