@@ -166,3 +166,11 @@ export const billingApi = {
       body: JSON.stringify(data),
     }),
 };
+
+export const auditLogApi = {
+  getRecentActivities: (count = 10) => {
+    const q = new URLSearchParams();
+    q.set('count', String(count));
+    return apiRequest<any[]>(`/api/auditlog/recent?${q}`);
+  },
+};

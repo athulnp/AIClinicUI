@@ -35,7 +35,31 @@ export async function apiRequest<T>(
   if (token) headers.Authorization = `Bearer ${token}`;
   if (clinicId) headers['X-Clinic-Id'] = String(clinicId);
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers,
+    mode: 'cors',
+    credentials: 'include',
+  };
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, fetchOptions);
+  } catch (error) {
+    // Handle network errors including CORS
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new ApiError(
+        'Network error: Unable to connect to the API server. This may be a CORS configuration issue on the backend. Please ensure the backend allows requests from this origin.',
+        0,
+        ['CORS_ERROR']
+      );
+    }
+    throw new ApiError(
+      'Network error: Unable to connect to the API server. Please check your internet connection.',
+      0,
+      ['NETWORK_ERROR']
+    );
+  }
 
   if (res.status === 204) return undefined as T;
 

@@ -12,9 +12,15 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': {
-          target: 'https://localhost:5001',
+          target: 'https://aiclinicos-gyh2afgkedb7epft.southindia-01.azurewebsites.net',
           changeOrigin: true,
-          secure: false,
+          secure: true,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              // Add CORS headers to proxy requests
+              proxyReq.setHeader('Origin', 'https://aiclinicos-gyh2afgkedb7epft.southindia-01.azurewebsites.net');
+            });
+          },
         },
       },
     },

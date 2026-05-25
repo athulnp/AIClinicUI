@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { appointmentsApi, billingApi, patientsApi } from '../api/services';
+import { appointmentsApi, auditLogApi, billingApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { Card, PageLoader } from '../components/ui';
-import { Users, Calendar, FileText, TrendingUp, Activity, Clock } from 'lucide-react';
+import { Users, Calendar, FileText, TrendingUp, Activity, Clock, UserPlus, CheckCircle, Receipt } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, needsClinicContext, selectedClinicId } = useAuth();
   const [stats, setStats] = useState({ patients: 0, appointments: 0, billing: 0 });
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,44 +20,49 @@ export function DashboardPage() {
       patientsApi.list({ pageNumber: 1, pageSize: 1 }),
       appointmentsApi.list({ pageNumber: 1, pageSize: 1 }),
       billingApi.list({ pageNumber: 1, pageSize: 1 }),
+      auditLogApi.getRecentActivities(5),
     ])
-      .then(([p, a, b]) =>
+      .then(([p, a, b, activities]) => {
         setStats({
           patients: p.totalRecords,
           appointments: a.totalRecords,
           billing: b.totalRecords,
-        }),
-      )
+        });
+        setRecentActivities(activities || []);
+      })
+      .catch(() => {
+        setRecentActivities([]);
+      })
       .finally(() => setLoading(false));
   }, [needsClinicContext, selectedClinicId]);
 
   if (loading) return <PageLoader />;
 
   const cards = [
-    { 
-      label: 'Total Patients', 
-      value: stats.patients, 
-      to: '/patients', 
+    {
+      label: 'Total Patients',
+      value: stats.patients,
+      to: '/patients',
       icon: Users,
       color: 'bg-[#005d90]',
       bgColor: 'bg-[#cde5ff]',
       textColor: 'text-[#001d32]',
       description: 'Registered patients'
     },
-    { 
-      label: 'Appointments', 
-      value: stats.appointments, 
-      to: '/appointments', 
+    {
+      label: 'Appointments',
+      value: stats.appointments,
+      to: '/appointments',
       icon: Calendar,
       color: 'bg-[#006878]',
       bgColor: 'bg-[#a7edff]',
       textColor: 'text-[#001f25]',
       description: 'Scheduled today'
     },
-    { 
-      label: 'Invoices', 
-      value: stats.billing, 
-      to: '/billing', 
+    {
+      label: 'Invoices',
+      value: stats.billing,
+      to: '/billing',
       icon: FileText,
       color: 'bg-[#00626f]',
       bgColor: 'bg-[#9feffe]',
@@ -64,6 +70,20 @@ export function DashboardPage() {
       description: 'Pending payments'
     },
   ];
+
+  const getActivityIcon = (action: string, entityType: string) => {
+    if (action === 'CREATE' && entityType === 'Patient') return UserPlus;
+    if (action === 'CREATE' && entityType === 'Billing') return Receipt;
+    if (action === 'UPDATE' && entityType === 'Appointment') return CheckCircle;
+    return Activity;
+  };
+
+  const getActivityColor = (action: string, entityType: string) => {
+    if (action === 'CREATE' && entityType === 'Patient') return 'bg-[#00626f]';
+    if (action === 'CREATE' && entityType === 'Billing') return 'bg-[#005d90]';
+    if (action === 'UPDATE' && entityType === 'Appointment') return 'bg-[#006878]';
+    return 'bg-[#00626f]';
+  };
 
   return (
     <div>
@@ -151,27 +171,31 @@ export function DashboardPage() {
                 </div>
               </div>
               <div className="space-y-2 sm:space-y-3 lg:space-y-4">
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
-                  <div className="h-2 w-2 rounded-full bg-[#00626f] shadow-sm"></div>
-                  <div className="flex-1">
-                    <p className="text-xs sm:text-xs lg:text-sm font-semibold text-[#191c1d]">New patient registered</p>
-                    <p className="text-xs text-[#404850]">2 minutes ago</p>
+                {recentActivities.length > 0 ? (
+                  recentActivities.map((activity) => {
+                    const Icon = getActivityIcon(activity.action, activity.entityType);
+                    const color = getActivityColor(activity.action, activity.entityType);
+                    return (
+                      <div key={activity.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
+                        <div className={`h-2 w-2 rounded-full ${color} shadow-sm`}></div>
+                        <div className="flex-1">
+                          <p className="text-xs sm:text-xs lg:text-sm font-semibold text-[#191c1d]">
+                            {activity.description || `${activity.action} ${activity.entityName || activity.entityType}`}
+                          </p>
+                          <p className="text-xs text-[#404850]">{activity.timeAgo}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
+                    <div className="h-2 w-2 rounded-full bg-[#707881] shadow-sm"></div>
+                    <div className="flex-1">
+                      <p className="text-xs sm:text-xs lg:text-sm font-semibold text-[#191c1d]">No recent activities</p>
+                      <p className="text-xs text-[#404850]">Start using the app to see activities here</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
-                  <div className="h-2 w-2 rounded-full bg-[#005d90] shadow-sm"></div>
-                  <div className="flex-1">
-                    <p className="text-xs sm:text-xs lg:text-sm font-semibold text-[#191c1d]">Appointment completed</p>
-                    <p className="text-xs text-[#404850]">15 minutes ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
-                  <div className="h-2 w-2 rounded-full bg-[#006878] shadow-sm"></div>
-                  <div className="flex-1">
-                    <p className="text-xs sm:text-xs lg:text-sm font-semibold text-[#191c1d]">Invoice generated</p>
-                    <p className="text-xs text-[#404850]">1 hour ago</p>
-                  </div>
-                </div>
+                )}
               </div>
             </Card>
           </div>
