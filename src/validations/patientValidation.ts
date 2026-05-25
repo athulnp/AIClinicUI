@@ -4,7 +4,7 @@ export const patientSchema = z.object({
   fullName: z.string()
     .min(1, 'Full name is required')
     .max(200, 'Full name must be less than 200 characters'),
-  gender: z.number().refine(val => val >= 0 && val <= 2, 'Valid gender is required'),
+  gender: z.coerce.number().refine(val => val >= 0 && val <= 2, 'Valid gender is required'),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   phoneNumber: z.string()
     .min(1, 'Phone number is required')

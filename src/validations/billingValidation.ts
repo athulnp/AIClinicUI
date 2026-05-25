@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 export const createBillingSchema = z.object({
-  patientId: z.number().min(1, 'Patient is required'),
-  appointmentId: z.number().optional(),
-  totalAmount: z.number()
+  patientId: z.coerce.number().min(1, 'Patient is required'),
+  appointmentId: z.coerce.number().optional(),
+  totalAmount: z.coerce.number()
     .min(0.01, 'Total amount must be greater than 0'),
-  paymentMethod: z.number().min(0, 'Valid payment method is required'),
+  paymentMethod: z.coerce.number().min(0, 'Valid payment method is required'),
   notes: z.string()
     .max(2000, 'Notes must be less than 2000 characters')
     .optional()
@@ -13,11 +13,11 @@ export const createBillingSchema = z.object({
 });
 
 export const updateBillingSchema = z.object({
-  patientId: z.number().min(1, 'Patient is required'),
-  appointmentId: z.number().optional(),
-  totalAmount: z.number()
+  patientId: z.coerce.number().min(1, 'Patient is required'),
+  appointmentId: z.coerce.number().optional(),
+  totalAmount: z.coerce.number()
     .min(0.01, 'Total amount must be greater than 0'),
-  paymentMethod: z.number().min(0, 'Valid payment method is required'),
+  paymentMethod: z.coerce.number().min(0, 'Valid payment method is required'),
   notes: z.string()
     .max(2000, 'Notes must be less than 2000 characters')
     .optional()
@@ -25,9 +25,9 @@ export const updateBillingSchema = z.object({
 });
 
 export const recordPaymentSchema = z.object({
-  paymentAmount: z.number()
+  paymentAmount: z.coerce.number()
     .min(0.01, 'Payment amount must be greater than 0'),
-  paymentMethod: z.number().min(0, 'Valid payment method is required'),
+  paymentMethod: z.coerce.number().min(0, 'Valid payment method is required'),
   notes: z.string()
     .max(2000, 'Notes must be less than 2000 characters')
     .optional()

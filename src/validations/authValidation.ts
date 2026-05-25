@@ -30,7 +30,7 @@ export const createUserSchema = z.object({
     .min(1, 'Phone number is required')
     .max(20, 'Phone number must be less than 20 characters')
     .regex(/^[+]?[\d\s-()]{10,20}$/, 'Invalid phone number format'),
-  roleId: z.number()
+  roleId: z.coerce.number()
     .min(1, 'Valid role is required'),
   clinicId: z.number().optional(),
 });
@@ -47,7 +47,7 @@ export const updateUserSchema = z.object({
     .min(1, 'Phone number is required')
     .max(20, 'Phone number must be less than 20 characters')
     .regex(/^[+]?[\d\s-()]{10,20}$/, 'Invalid phone number format'),
-  roleId: z.number()
+  roleId: z.coerce.number()
     .min(1, 'Valid role is required'),
   isActive: z.boolean(),
 });
