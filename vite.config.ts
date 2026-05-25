@@ -17,7 +17,6 @@ export default defineConfig(({ mode }) => {
           secure: true,
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
-              // Add CORS headers to proxy requests
               proxyReq.setHeader('Origin', 'https://aiclinicos-gyh2afgkedb7epft.southindia-01.azurewebsites.net');
             });
           },
@@ -27,23 +26,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: false,
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-        },
-      },
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          },
-          entryFileNames: 'assets/[name]-[hash].js',
-          chunkFileNames: 'assets/[name]-[hash].js',
-          assetFileNames: 'assets/[name]-[hash][extname]',
-        },
-      },
-      chunkSizeWarningLimit: 1000,
     },
   }
 })

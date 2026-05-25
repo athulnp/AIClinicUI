@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { appointmentsApi, auditLogApi, billingApi, patientsApi } from '../api/services';
 import { useAuth } from '../context/AuthContext';
 import { Card, PageLoader } from '../components/ui';
-import { Users, Calendar, FileText, TrendingUp, Activity, Clock, UserPlus, CheckCircle, Receipt } from 'lucide-react';
+import { Users, Calendar, FileText, TrendingUp, Activity, Clock } from 'lucide-react';
 
 export function DashboardPage() {
   const { user, needsClinicContext, selectedClinicId } = useAuth();
@@ -70,13 +70,6 @@ export function DashboardPage() {
       description: 'Pending payments'
     },
   ];
-
-  const getActivityIcon = (action: string, entityType: string) => {
-    if (action === 'CREATE' && entityType === 'Patient') return UserPlus;
-    if (action === 'CREATE' && entityType === 'Billing') return Receipt;
-    if (action === 'UPDATE' && entityType === 'Appointment') return CheckCircle;
-    return Activity;
-  };
 
   const getActivityColor = (action: string, entityType: string) => {
     if (action === 'CREATE' && entityType === 'Patient') return 'bg-[#00626f]';
@@ -173,7 +166,6 @@ export function DashboardPage() {
               <div className="space-y-2 sm:space-y-3 lg:space-y-4">
                 {recentActivities.length > 0 ? (
                   recentActivities.map((activity) => {
-                    const Icon = getActivityIcon(activity.action, activity.entityType);
                     const color = getActivityColor(activity.action, activity.entityType);
                     return (
                       <div key={activity.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-[#e1e3e4] bg-white">
