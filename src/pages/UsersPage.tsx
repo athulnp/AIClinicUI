@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { usersApi, rolesApi } from '../api/services';
@@ -54,18 +54,6 @@ export function UsersPage() {
     isActive: true,
   });
 
-  // Use refs for mutable values that validation callbacks need
-  const isSuperAdminRef = useRef(isSuperAdmin);
-  const selectedClinicIdRef = useRef(selectedClinicId);
-  const editIdRef = useRef(editId);
-  const loadRef = useRef<((search?: string) => Promise<void>) | null>(null);
-
-  useEffect(() => {
-    isSuperAdminRef.current = isSuperAdmin;
-    selectedClinicIdRef.current = selectedClinicId;
-    editIdRef.current = editId;
-  }, [isSuperAdmin, selectedClinicId, editId]);
-
   const emptyForm = {
     username: '',
     password: '',
@@ -88,55 +76,42 @@ export function UsersPage() {
     }
   }, [needsClinicContext]);
 
-  loadRef.current = load;
-
-  const createValidationRef = useRef<ReturnType<typeof useFormValidation> | null>(null);
-  const updateValidationRef = useRef<ReturnType<typeof useFormValidation> | null>(null);
-
-  if (!createValidationRef.current) {
-    createValidationRef.current = useFormValidation(
-      createUserSchema,
-      async (data) => {
-        const body: Record<string, unknown> = {
-          username: data.username,
-          password: data.password,
-          fullName: data.fullName,
-          email: data.email || undefined,
-          phoneNumber: data.phoneNumber || undefined,
-          roleId: Number(data.roleId),
-        };
-        if (isSuperAdminRef.current && selectedClinicIdRef.current) {
-          body.clinicId = selectedClinicIdRef.current;
-        }
-        await usersApi.create(body);
-        setModal(null);
-        setForm(emptyForm);
-        loadRef.current?.();
+  const createValidation = useFormValidation(
+    createUserSchema,
+    async (data) => {
+      const body: Record<string, unknown> = {
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
+        email: data.email || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+        roleId: Number(data.roleId),
+      };
+      if (isSuperAdmin && selectedClinicId) {
+        body.clinicId = selectedClinicId;
       }
-    );
-  }
+      await usersApi.create(body);
+      setModal(null);
+      setForm(emptyForm);
+      load();
+    }
+  );
 
-  if (!updateValidationRef.current) {
-    updateValidationRef.current = useFormValidation(
-      updateUserSchema,
-      async (data) => {
-        const currentEditId = editIdRef.current;
-        if (!currentEditId) return;
-        await usersApi.update(currentEditId, {
-          fullName: data.fullName,
-          email: data.email || undefined,
-          phoneNumber: data.phoneNumber || undefined,
-          roleId: Number(data.roleId),
-          isActive: data.isActive,
-        });
-        setModal(null);
-        loadRef.current?.();
-      }
-    );
-  }
-
-  const createValidation = createValidationRef.current;
-  const updateValidation = updateValidationRef.current;
+  const updateValidation = useFormValidation(
+    updateUserSchema,
+    async (data) => {
+      if (!editId) return;
+      await usersApi.update(editId, {
+        fullName: data.fullName,
+        email: data.email || undefined,
+        phoneNumber: data.phoneNumber || undefined,
+        roleId: Number(data.roleId),
+        isActive: data.isActive,
+      });
+      setModal(null);
+      load();
+    }
+  );
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
