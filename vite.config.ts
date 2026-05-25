@@ -25,9 +25,26 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      // In production, use the API base URL from environment variable
-      // The actual API URL should be set in .env.production
-      // The client code will use import.meta.env.VITE_API_BASE_URL
+      outDir: 'dist',
+      sourcemap: false,
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          },
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
+        },
+      },
+      chunkSizeWarningLimit: 1000,
     },
   }
 })
+
