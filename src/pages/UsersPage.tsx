@@ -27,9 +27,10 @@ export function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; userId: number | null }>({
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; userId: number | null; action: 'deactivate' | 'activate' | null }>({
     isOpen: false,
     userId: null,
+    action: null,
   });
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<{
@@ -132,17 +133,25 @@ export function UsersPage() {
   };
 
   const deactivate = async (id: number) => {
-    setConfirmDialog({ isOpen: true, userId: id });
+    setConfirmDialog({ isOpen: true, userId: id, action: 'deactivate' });
+  };
+
+  const activate = async (id: number) => {
+    setConfirmDialog({ isOpen: true, userId: id, action: 'activate' });
   };
 
   const handleConfirmDeactivate = async () => {
     if (!confirmDialog.userId) return;
     try {
-      await usersApi.deactivate(confirmDialog.userId);
-      setConfirmDialog({ isOpen: false, userId: null });
+      if (confirmDialog.action === 'deactivate') {
+        await usersApi.deactivate(confirmDialog.userId);
+      } else if (confirmDialog.action === 'activate') {
+        await usersApi.activate(confirmDialog.userId);
+      }
+      setConfirmDialog({ isOpen: false, userId: null, action: null });
       load();
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : 'Deactivation failed');
+      alert(e instanceof ApiError ? e.message : 'Operation failed');
     }
   };
 
@@ -206,6 +215,7 @@ export function UsersPage() {
                     </Link>
                     <Button variant="ghost" onClick={() => openEdit(u)} className="text-xs">Edit</Button>
                     {u.isActive && <Button variant="ghost" onClick={() => deactivate(u.id)} className="text-xs text-red-600">Deactivate</Button>}
+                    {!u.isActive && <Button variant="ghost" onClick={() => activate(u.id)} className="text-xs text-green-600">Activate</Button>}
                   </td>
                 </tr>
               ))}
@@ -251,13 +261,15 @@ export function UsersPage() {
 
       <ConfirmationDialog
         isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ isOpen: false, userId: null })}
+        onClose={() => setConfirmDialog({ isOpen: false, userId: null, action: null })}
         onConfirm={handleConfirmDeactivate}
-        title="Deactivate User"
-        message="Are you sure you want to deactivate this user? They will no longer be able to access the system."
-        confirmText="Deactivate"
+        title={confirmDialog.action === 'deactivate' ? 'Deactivate User' : 'Activate User'}
+        message={confirmDialog.action === 'deactivate' 
+          ? "Are you sure you want to deactivate this user? They will no longer be able to access the system."
+          : "Are you sure you want to activate this user? They will be able to access the system again."}
+        confirmText={confirmDialog.action === 'deactivate' ? 'Deactivate' : 'Activate'}
         cancelText="Cancel"
-        variant="danger"
+        variant={confirmDialog.action === 'deactivate' ? 'danger' : 'warning'}
       />
     </div>
   );

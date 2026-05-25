@@ -63,6 +63,7 @@ export const usersApi = {
   update: (id: number, data: Record<string, unknown>) =>
     apiRequest<User>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deactivate: (id: number) => apiRequest(`/api/users/${id}`, { method: 'DELETE' }),
+  activate: (id: number) => apiRequest(`/api/users/${id}/activate`, { method: 'PUT' }),
   updateProfile: (data: Record<string, unknown>) =>
     apiRequest<User>('/api/users/me', { method: 'PUT', body: JSON.stringify(data) }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>

@@ -15,7 +15,7 @@ export function UserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean }>({ isOpen: false });
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; action: 'deactivate' | 'activate' | null }>({ isOpen: false, action: null });
   const [form, setForm] = useState({
     username: '',
     fullName: '',
@@ -65,15 +65,24 @@ export function UserDetailPage() {
 
   const handleDeactivate = async () => {
     if (!id) return;
-    setConfirmDialog({ isOpen: true });
+    setConfirmDialog({ isOpen: true, action: 'deactivate' });
   };
 
-  const handleConfirmDeactivate = async () => {
+  const handleActivate = async () => {
+    if (!id) return;
+    setConfirmDialog({ isOpen: true, action: 'activate' });
+  };
+
+  const handleConfirmAction = async () => {
     if (!id) return;
     setError(null);
     try {
-      await usersApi.deactivate(Number(id));
-      setConfirmDialog({ isOpen: false });
+      if (confirmDialog.action === 'deactivate') {
+        await usersApi.deactivate(Number(id));
+      } else if (confirmDialog.action === 'activate') {
+        await usersApi.activate(Number(id));
+      }
+      setConfirmDialog({ isOpen: false, action: null });
       navigate('/users');
     } catch (err) {
       if (err instanceof ApiError) {
@@ -197,6 +206,13 @@ export function UserDetailPage() {
                   </Button>
                 </>
               )}
+              {!editMode && canEdit && !user.isActive && (
+                <>
+                  <Button onClick={handleActivate} className="w-full" variant="secondary">
+                    Activate User
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </Card>
@@ -204,13 +220,15 @@ export function UserDetailPage() {
 
       <ConfirmationDialog
         isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ isOpen: false })}
-        onConfirm={handleConfirmDeactivate}
-        title="Deactivate User"
-        message="Are you sure you want to deactivate this user? They will no longer be able to access the system."
-        confirmText="Deactivate"
+        onClose={() => setConfirmDialog({ isOpen: false, action: null })}
+        onConfirm={handleConfirmAction}
+        title={confirmDialog.action === 'deactivate' ? 'Deactivate User' : 'Activate User'}
+        message={confirmDialog.action === 'deactivate' 
+          ? "Are you sure you want to deactivate this user? They will no longer be able to access the system."
+          : "Are you sure you want to activate this user? They will be able to access the system again."}
+        confirmText={confirmDialog.action === 'deactivate' ? 'Deactivate' : 'Activate'}
         cancelText="Cancel"
-        variant="danger"
+        variant={confirmDialog.action === 'deactivate' ? 'danger' : 'warning'}
       />
     </div>
   );
