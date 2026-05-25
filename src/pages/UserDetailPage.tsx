@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { usersApi } from '../api/services';
@@ -46,7 +46,7 @@ export function UserDetailPage() {
     load();
   }, [id, needsClinicContext]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const usr = await usersApi.list({ pageNumber: 1, pageSize: 1 });
@@ -64,7 +64,7 @@ export function UserDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, needsClinicContext]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
