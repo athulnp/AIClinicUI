@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(({ mode }) => {
-  loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, process.cwd(), '')
   
   return {
     plugins: [react(), tailwindcss()],
@@ -12,12 +12,12 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       proxy: {
         '/api': {
-          target: 'https://aiclinicos-gyh2afgkedb7epft.southindia-01.azurewebsites.net',
+          target: env.VITE_API_BASE_URL,
           changeOrigin: true,
-          secure: true,
+          secure: mode === 'production',
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
-              proxyReq.setHeader('Origin', 'https://aiclinicos-gyh2afgkedb7epft.southindia-01.azurewebsites.net');
+              proxyReq.setHeader('Origin', env.VITE_API_BASE_URL);
             });
           },
         },

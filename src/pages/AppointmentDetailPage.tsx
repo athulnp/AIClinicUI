@@ -7,6 +7,7 @@ import { AppointmentStatus, type Appointment, type AppointmentNote, type Doctor,
 import { appointmentStatusLabels, formatDate, formatTime } from '../utils/labels';
 import { Alert, Badge, Button, Card, EmptyState, Input, Modal, PageLoader } from '../components/ui';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { TreatmentNoteGenerator } from '../components/TreatmentNoteGenerator';
 
 export function AppointmentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -310,6 +311,12 @@ export function AppointmentDetailPage() {
               )}
             </div>
           </Card>
+
+          <TreatmentNoteGenerator
+            patientId={appointment.patientId}
+            appointmentId={appointment.id}
+            onSave={load}
+          />
         </div>
 
         <div className="space-y-4 sm:space-y-6">

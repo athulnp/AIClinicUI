@@ -233,3 +233,61 @@ export interface CreateAppointmentNoteRequest {
 export interface UpdateAppointmentNoteRequest {
   content: string;
 }
+
+export interface TreatmentNote {
+  id: number;
+  clinicId: number;
+  patientId: number;
+  appointmentId: number;
+  procedureType: string;
+  toothNumber?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  treatmentPerformed?: string;
+  additionalNotes?: string;
+  aiGeneratedNote?: string;
+  finalNote?: string;
+  generatedByUserId: number;
+  createdAt: string;
+  updatedAt?: string;
+  generatedByUserName?: string;
+  patientName?: string;
+}
+
+export interface GenerateTreatmentNoteRequest {
+  patientId: number;
+  appointmentId: number;
+  procedureType: string;
+  toothNumber?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  treatmentPerformed?: string;
+  additionalNotes?: string;
+}
+
+export interface GenerateTreatmentNoteResponse {
+  generatedNote: string;
+}
+
+export interface CreateTreatmentNoteRequest {
+  patientId: number;
+  appointmentId: number;
+  procedureType: string;
+  toothNumber?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  treatmentPerformed?: string;
+  additionalNotes?: string;
+  aiGeneratedNote?: string;
+  finalNote?: string;
+}
+
+export interface UpdateTreatmentNoteRequest {
+  procedureType?: string;
+  toothNumber?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  treatmentPerformed?: string;
+  additionalNotes?: string;
+  finalNote?: string;
+}

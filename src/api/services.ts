@@ -175,3 +175,34 @@ export const auditLogApi = {
     return apiRequest<any[]>(`/api/auditlog/recent?${q}`);
   },
 };
+
+export const treatmentNotesApi = {
+  generate: (data: {
+    patientId: number;
+    appointmentId: number;
+    procedureType: string;
+    toothNumber?: string;
+    symptoms?: string;
+    diagnosis?: string;
+    treatmentPerformed?: string;
+    additionalNotes?: string;
+  }) =>
+    apiRequest<{ generatedNote: string }>('/api/TreatmentNotes/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  save: (data: Record<string, unknown>) =>
+    apiRequest<any>('/api/TreatmentNotes', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: number, data: Record<string, unknown>) =>
+    apiRequest<any>(`/api/TreatmentNotes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: number) => apiRequest(`/api/TreatmentNotes/${id}`, { method: 'DELETE' }),
+  getById: (id: number) => apiRequest<any>(`/api/TreatmentNotes/${id}`),
+  getByPatient: (patientId: number, pageNumber = 1, pageSize = 20) => {
+    const q = new URLSearchParams();
+    q.set('pageNumber', String(pageNumber));
+    q.set('pageSize', String(pageSize));
+    return apiRequest<any[]>(`/api/TreatmentNotes/patient/${patientId}?${q}`);
+  },
+  getByAppointment: (appointmentId: number) =>
+    apiRequest<any[]>(`/api/TreatmentNotes/appointment/${appointmentId}`),
+};
